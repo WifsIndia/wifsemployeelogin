@@ -179,7 +179,7 @@ function SideLink({
   const active = pathname === item.to;
   return (
     <Link
-      to={item.to}
+      to={item.to as "/dashboard"}
       onClick={onNavigate}
       className={cn(
         "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
