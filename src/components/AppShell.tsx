@@ -17,7 +17,8 @@ import {
   LogOut,
   Menu,
   X,
-  ShieldCheck,
+  UsersRound,
+  Loader2,
 } from "lucide-react";
 import { useAuth, type AppRole } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,33 +29,47 @@ interface NavItem {
   to: string;
   label: string;
   icon: typeof LayoutDashboard;
-  roles?: AppRole[];
 }
 
-const NAV: NavItem[] = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/attendance", label: "Attendance", icon: MapPin },
-  { to: "/attendance/history", label: "Attendance History", icon: CalendarDays },
-  { to: "/tasks", label: "Tasks", icon: ListChecks },
-  { to: "/work-log", label: "Daily Work Log", icon: NotebookPen },
-  { to: "/leave", label: "Leave", icon: CalendarDays },
-  { to: "/announcements", label: "Announcements", icon: Megaphone },
-  { to: "/notifications", label: "Notifications", icon: Bell },
-  { to: "/documents", label: "Documents", icon: FileText },
-  { to: "/profile", label: "My Profile", icon: UserRound },
-];
+const I = {
+  dashboard: { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  team: { to: "/team", label: "Team", icon: UsersRound },
+  employees: { to: "/admin/employees", label: "Employees", icon: Users },
+  attendance: { to: "/attendance", label: "Attendance", icon: MapPin },
+  myTasks: { to: "/tasks", label: "My Tasks", icon: ListChecks },
+  tasks: { to: "/tasks", label: "Tasks", icon: ListChecks },
+  work: { to: "/work-log", label: "Daily Work", icon: NotebookPen },
+  leave: { to: "/leave", label: "Leave", icon: CalendarDays },
+  ann: { to: "/announcements", label: "Announcements", icon: Megaphone },
+  reports: { to: "/reports", label: "Reports", icon: BarChart3 },
+  notif: { to: "/notifications", label: "Notifications", icon: Bell },
+  settings: { to: "/admin/settings/office-location", label: "Settings", icon: Settings },
+  docs: { to: "/documents", label: "Documents", icon: FileText },
+  profile: { to: "/profile", label: "Profile", icon: UserRound },
+} satisfies Record<string, NavItem>;
 
-const ADMIN_NAV: NavItem[] = [
-  { to: "/admin", label: "Overview", icon: ShieldCheck, roles: ["admin", "hr", "manager"] },
-  { to: "/admin/employees", label: "Employees", icon: Users, roles: ["admin", "hr"] },
-  { to: "/admin/attendance", label: "Attendance", icon: MapPin, roles: ["admin", "hr", "manager"] },
-  { to: "/admin/tasks", label: "Tasks", icon: ListChecks, roles: ["admin", "hr", "manager"] },
-  { to: "/admin/reports", label: "Reports", icon: BarChart3, roles: ["admin", "hr", "manager"] },
-  { to: "/admin/settings", label: "Settings", icon: Settings, roles: ["admin"] },
-];
+const NAV_BY_ROLE: Record<AppRole, NavItem[]> = {
+  employee: [I.dashboard, I.attendance, I.myTasks, I.work, I.leave, I.ann, I.notif, I.docs, I.profile],
+  manager: [I.dashboard, I.team, I.attendance, I.tasks, I.work, I.leave, I.ann, I.notif, I.profile],
+  hr: [I.dashboard, I.employees, I.attendance, I.work, I.leave, I.ann, I.reports, I.notif, I.profile],
+  admin: [
+    I.dashboard,
+    I.employees,
+    I.attendance,
+    I.tasks,
+    I.work,
+    I.leave,
+    I.ann,
+    I.reports,
+    I.notif,
+    I.settings,
+    I.docs,
+    I.profile,
+  ],
+};
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { profile, primaryRole, hasRole, signOut, user } = useAuth();
+  const { profile, primaryRole, signOut, user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -63,6 +78,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { data: unread = 0 } = useQuery({
     queryKey: ["unread-notifications", user?.id],
     enabled: !!user?.id,
+    refetchInterval: 60000,
     queryFn: async () => {
       const { count } = await supabase
         .from("notifications")
@@ -79,7 +95,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     navigate({ to: "/auth", replace: true });
   };
 
-  const adminItems = ADMIN_NAV.filter((i) => !i.roles || hasRole(...i.roles));
+  const items = NAV_BY_ROLE[primaryRole];
 
   const sidebar = (
     <div className="flex h-full w-64 flex-col bg-sidebar text-sidebar-foreground">
@@ -93,8 +109,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-        {NAV.map((item) => (
-          <SideLink key={item.to} item={item} pathname={pathname} onNavigate={() => setOpen(false)}>
+        {items.map((item) => (
+          <SideLink key={item.to + item.label} item={item} pathname={pathname} onNavigate={() => setOpen(false)}>
             {item.to === "/notifications" && unread > 0 ? (
               <span className="ml-auto rounded-full bg-sidebar-primary px-2 py-0.5 text-[11px] font-semibold text-sidebar-primary-foreground">
                 {unread}
@@ -102,16 +118,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             ) : null}
           </SideLink>
         ))}
-        {adminItems.length > 0 && (
-          <div className="pt-4">
-            <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">
-              Administration
-            </p>
-            {adminItems.map((item) => (
-              <SideLink key={item.to} item={item} pathname={pathname} onNavigate={() => setOpen(false)} />
-            ))}
-          </div>
-        )}
       </nav>
       <div className="border-t border-sidebar-border p-4">
         <p className="truncate text-sm font-medium">{profile?.full_name || "Employee"}</p>
@@ -128,7 +134,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <aside className="hidden lg:block">{sidebar}</aside>
+      <aside className="sticky top-0 hidden h-screen lg:block">{sidebar}</aside>
       {open && (
         <div className="fixed inset-0 z-50 flex lg:hidden">
           <div className="absolute inset-0 bg-foreground/50" onClick={() => setOpen(false)} />
@@ -176,7 +182,7 @@ function SideLink({
   children?: ReactNode;
 }) {
   const Icon = item.icon;
-  const active = pathname === item.to;
+  const active = pathname === item.to || pathname.startsWith(item.to + "/");
   return (
     <Link
       to={item.to as "/dashboard"}
@@ -195,11 +201,22 @@ function SideLink({
   );
 }
 
-export function PageHeader({ title, description }: { title: string; description?: string }) {
+export function PageHeader({
+  title,
+  description,
+  action,
+}: {
+  title: string;
+  description?: string;
+  action?: ReactNode;
+}) {
   return (
-    <div className="mb-6">
-      <h1 className="font-display text-2xl font-bold tracking-tight">{title}</h1>
-      {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+    <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <h1 className="font-display text-2xl font-bold tracking-tight">{title}</h1>
+        {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+      </div>
+      {action}
     </div>
   );
 }
@@ -213,7 +230,7 @@ export function AccessDenied() {
         You do not have permission to view this page. Contact your administrator if you believe this is a
         mistake.
       </p>
-      <Link to="/dashboard" className="mt-5 inline-block text-sm font-medium text-primary underline">
+      <Link to="/dashboard" className="mt-5 inline-block text-sm font-semibold text-primary hover:underline">
         Back to dashboard
       </Link>
     </div>
@@ -224,4 +241,43 @@ export function RequireRole({ roles, children }: { roles: AppRole[]; children: R
   const { hasRole } = useAuth();
   if (!hasRole(...roles)) return <AccessDenied />;
   return <>{children}</>;
+}
+
+export function Loading() {
+  return (
+    <div className="flex items-center justify-center py-12 text-muted-foreground">
+      <Loader2 className="size-5 animate-spin" />
+    </div>
+  );
+}
+
+export function Empty({ children }: { children: ReactNode }) {
+  return <p className="py-8 text-center text-sm text-muted-foreground">{children}</p>;
+}
+
+export function StatCard({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-1 font-display text-2xl font-bold">{value}</p>
+      {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+    </div>
+  );
+}
+
+export function StatusPill({ status }: { status: string }) {
+  const s = status.toUpperCase();
+  const tone =
+    s === "APPROVED" || s === "COMPLETED" || s === "CHECKED_OUT" || s === "ACTIVE"
+      ? "bg-success/15 text-success"
+      : s === "REJECTED" || s === "INACTIVE" || s === "URGENT" || s === "ABSENT"
+        ? "bg-destructive/15 text-destructive"
+        : s === "PENDING" || s === "ON_HOLD" || s === "HIGH" || s === "CHECKED_IN"
+          ? "bg-warning/20 text-warning-foreground"
+          : "bg-muted text-muted-foreground";
+  return (
+    <span className={cn("inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold", tone)}>
+      {s.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase())}
+    </span>
+  );
 }
