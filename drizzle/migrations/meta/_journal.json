@@ -8,6 +8,13 @@
       "when": 1790278330916,
       "tag": "0000_wifs_portal_core",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790310312128,
+      "tag": "0001_guard_leave_task_updates_and_notifications",
+      "breakpoints": true
     }
   ]
 }
