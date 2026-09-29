@@ -48,7 +48,7 @@ function Page() {
   const useMyLocation = async () => {
     try {
       const p = await getCurrentPosition();
-      setF({ ...f, latitude: p.coords.latitude.toFixed(6), longitude: p.coords.longitude.toFixed(6) });
+      setF({ ...f, latitude: p.latitude.toFixed(6), longitude: p.longitude.toFixed(6) });
     } catch {
       toast.error("Could not get your current location.");
     }
