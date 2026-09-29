@@ -658,11 +658,17 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "hr" | "manager" | "employee"
+      app_role: "admin" | "hr" | "manager" | "employee" | "super_admin"
       attendance_status: "checked_in" | "checked_out"
       employee_status: "active" | "inactive"
       leave_status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED"
-      leave_type: "CASUAL" | "SICK" | "EARNED" | "UNPAID" | "OTHER"
+      leave_type:
+        | "CASUAL"
+        | "SICK"
+        | "EARNED"
+        | "UNPAID"
+        | "OTHER"
+        | "EMERGENCY"
       task_priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT"
       task_status: "NOT_STARTED" | "IN_PROGRESS" | "ON_HOLD" | "COMPLETED"
     }
@@ -792,11 +798,11 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "hr", "manager", "employee"],
+      app_role: ["admin", "hr", "manager", "employee", "super_admin"],
       attendance_status: ["checked_in", "checked_out"],
       employee_status: ["active", "inactive"],
       leave_status: ["PENDING", "APPROVED", "REJECTED", "CANCELLED"],
-      leave_type: ["CASUAL", "SICK", "EARNED", "UNPAID", "OTHER"],
+      leave_type: ["CASUAL", "SICK", "EARNED", "UNPAID", "OTHER", "EMERGENCY"],
       task_priority: ["LOW", "MEDIUM", "HIGH", "URGENT"],
       task_status: ["NOT_STARTED", "IN_PROGRESS", "ON_HOLD", "COMPLETED"],
     },
