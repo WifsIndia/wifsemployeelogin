@@ -64,11 +64,16 @@ export type Database = {
           check_out_longitude: number | null
           check_out_time: string | null
           created_at: string
+          day_status: string | null
+          early_departure_minutes: number | null
           employee_id: string
           id: string
+          late_minutes: number | null
           office_location_id: string | null
+          overtime_minutes: number | null
           status: Database["public"]["Enums"]["attendance_status"]
           updated_at: string
+          worked_minutes: number | null
         }
         Insert: {
           attendance_date?: string
@@ -81,11 +86,16 @@ export type Database = {
           check_out_longitude?: number | null
           check_out_time?: string | null
           created_at?: string
+          day_status?: string | null
+          early_departure_minutes?: number | null
           employee_id: string
           id?: string
+          late_minutes?: number | null
           office_location_id?: string | null
+          overtime_minutes?: number | null
           status?: Database["public"]["Enums"]["attendance_status"]
           updated_at?: string
+          worked_minutes?: number | null
         }
         Update: {
           attendance_date?: string
@@ -98,11 +108,16 @@ export type Database = {
           check_out_longitude?: number | null
           check_out_time?: string | null
           created_at?: string
+          day_status?: string | null
+          early_departure_minutes?: number | null
           employee_id?: string
           id?: string
+          late_minutes?: number | null
           office_location_id?: string | null
+          overtime_minutes?: number | null
           status?: Database["public"]["Enums"]["attendance_status"]
           updated_at?: string
+          worked_minutes?: number | null
         }
         Relationships: [
           {
@@ -216,11 +231,146 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_compensation: {
+        Row: {
+          account_holder: string | null
+          account_number: string | null
+          allowances: number
+          bank_name: string | null
+          basic_salary: number
+          deductions: number
+          employee_id: string
+          ifsc: string | null
+          payment_mode: string
+          updated_at: string
+          upi_id: string | null
+        }
+        Insert: {
+          account_holder?: string | null
+          account_number?: string | null
+          allowances?: number
+          bank_name?: string | null
+          basic_salary?: number
+          deductions?: number
+          employee_id: string
+          ifsc?: string | null
+          payment_mode?: string
+          updated_at?: string
+          upi_id?: string | null
+        }
+        Update: {
+          account_holder?: string | null
+          account_number?: string | null
+          allowances?: number
+          bank_name?: string | null
+          basic_salary?: number
+          deductions?: number
+          employee_id?: string
+          ifsc?: string | null
+          payment_mode?: string
+          updated_at?: string
+          upi_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_compensation_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      holidays: {
+        Row: {
+          active: boolean
+          created_at: string
+          holiday_date: string
+          holiday_type: string
+          id: string
+          location_id: string | null
+          mandatory: boolean
+          name: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          holiday_date: string
+          holiday_type?: string
+          id?: string
+          location_id?: string | null
+          mandatory?: boolean
+          name: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          holiday_date?: string
+          holiday_type?: string
+          id?: string
+          location_id?: string | null
+          mandatory?: boolean
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "holidays_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "office_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leave_policies: {
+        Row: {
+          active: boolean
+          allow_half_day: boolean
+          approver: string
+          carry_forward: boolean
+          days_per_year: number
+          is_paid: boolean
+          label: string
+          leave_type: Database["public"]["Enums"]["leave_type"]
+          max_carry_forward: number
+          min_notice_days: number
+          requires_approval: boolean
+        }
+        Insert: {
+          active?: boolean
+          allow_half_day?: boolean
+          approver?: string
+          carry_forward?: boolean
+          days_per_year?: number
+          is_paid?: boolean
+          label: string
+          leave_type: Database["public"]["Enums"]["leave_type"]
+          max_carry_forward?: number
+          min_notice_days?: number
+          requires_approval?: boolean
+        }
+        Update: {
+          active?: boolean
+          allow_half_day?: boolean
+          approver?: string
+          carry_forward?: boolean
+          days_per_year?: number
+          is_paid?: boolean
+          label?: string
+          leave_type?: Database["public"]["Enums"]["leave_type"]
+          max_carry_forward?: number
+          min_notice_days?: number
+          requires_approval?: boolean
+        }
+        Relationships: []
+      }
       leave_requests: {
         Row: {
           created_at: string
+          days: number | null
           employee_id: string
           end_date: string
+          half_day: boolean
           id: string
           leave_type: Database["public"]["Enums"]["leave_type"]
           reason: string | null
@@ -233,8 +383,10 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          days?: number | null
           employee_id: string
           end_date: string
+          half_day?: boolean
           id?: string
           leave_type?: Database["public"]["Enums"]["leave_type"]
           reason?: string | null
@@ -247,8 +399,10 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          days?: number | null
           employee_id?: string
           end_date?: string
+          half_day?: boolean
           id?: string
           leave_type?: Database["public"]["Enums"]["leave_type"]
           reason?: string | null
@@ -317,36 +471,141 @@ export type Database = {
       office_locations: {
         Row: {
           active: boolean
+          address: string | null
           city: string | null
           created_at: string
+          email: string | null
           id: string
           latitude: number | null
           longitude: number | null
           name: string
+          phone: string | null
+          pin_code: string | null
           radius_meters: number
+          state: string | null
           updated_at: string
         }
         Insert: {
           active?: boolean
+          address?: string | null
           city?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
           name: string
+          phone?: string | null
+          pin_code?: string | null
           radius_meters?: number
+          state?: string | null
           updated_at?: string
         }
         Update: {
           active?: boolean
+          address?: string | null
           city?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
           name?: string
+          phone?: string | null
+          pin_code?: string | null
           radius_meters?: number
+          state?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      organization_settings: {
+        Row: {
+          address: string | null
+          audit_retention_days: number
+          city: string | null
+          country: string | null
+          currency: string
+          date_format: string
+          early_departure_grace_minutes: number
+          email: string | null
+          full_day_hours: number
+          grace_minutes: number
+          half_day_hours: number
+          id: boolean
+          logo_url: string | null
+          name: string
+          office_end: string
+          office_start: string
+          overtime_after_minutes: number
+          overtime_enabled: boolean
+          phone: string | null
+          pin_code: string | null
+          salary_divisor_mode: string
+          salary_fixed_divisor: number
+          state: string | null
+          timezone: string
+          updated_at: string
+          website: string | null
+          working_days: number[]
+        }
+        Insert: {
+          address?: string | null
+          audit_retention_days?: number
+          city?: string | null
+          country?: string | null
+          currency?: string
+          date_format?: string
+          early_departure_grace_minutes?: number
+          email?: string | null
+          full_day_hours?: number
+          grace_minutes?: number
+          half_day_hours?: number
+          id?: boolean
+          logo_url?: string | null
+          name?: string
+          office_end?: string
+          office_start?: string
+          overtime_after_minutes?: number
+          overtime_enabled?: boolean
+          phone?: string | null
+          pin_code?: string | null
+          salary_divisor_mode?: string
+          salary_fixed_divisor?: number
+          state?: string | null
+          timezone?: string
+          updated_at?: string
+          website?: string | null
+          working_days?: number[]
+        }
+        Update: {
+          address?: string | null
+          audit_retention_days?: number
+          city?: string | null
+          country?: string | null
+          currency?: string
+          date_format?: string
+          early_departure_grace_minutes?: number
+          email?: string | null
+          full_day_hours?: number
+          grace_minutes?: number
+          half_day_hours?: number
+          id?: boolean
+          logo_url?: string | null
+          name?: string
+          office_end?: string
+          office_start?: string
+          overtime_after_minutes?: number
+          overtime_enabled?: boolean
+          phone?: string | null
+          pin_code?: string | null
+          salary_divisor_mode?: string
+          salary_fixed_divisor?: number
+          state?: string | null
+          timezone?: string
+          updated_at?: string
+          website?: string | null
+          working_days?: number[]
         }
         Relationships: []
       }
@@ -354,13 +613,16 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          custom_role_id: string | null
           department_id: string | null
           designation: string | null
           email: string
           employee_code: string | null
+          employment_type: string
           full_name: string
           id: string
           joining_date: string | null
+          location_id: string | null
           manager_id: string | null
           phone: string | null
           status: Database["public"]["Enums"]["employee_status"]
@@ -369,13 +631,16 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          custom_role_id?: string | null
           department_id?: string | null
           designation?: string | null
           email?: string
           employee_code?: string | null
+          employment_type?: string
           full_name?: string
           id: string
           joining_date?: string | null
+          location_id?: string | null
           manager_id?: string | null
           phone?: string | null
           status?: Database["public"]["Enums"]["employee_status"]
@@ -384,13 +649,16 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          custom_role_id?: string | null
           department_id?: string | null
           designation?: string | null
           email?: string
           employee_code?: string | null
+          employment_type?: string
           full_name?: string
           id?: string
           joining_date?: string | null
+          location_id?: string | null
           manager_id?: string | null
           phone?: string | null
           status?: Database["public"]["Enums"]["employee_status"]
@@ -398,10 +666,24 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "profiles_custom_role_id_fkey"
+            columns: ["custom_role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "profiles_department_id_fkey"
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "office_locations"
             referencedColumns: ["id"]
           },
           {
@@ -447,6 +729,74 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      role_permissions: {
+        Row: {
+          can_approve: boolean
+          can_create: boolean
+          can_delete: boolean
+          can_edit: boolean
+          can_view: boolean
+          module: string
+          role_id: string
+        }
+        Insert: {
+          can_approve?: boolean
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_view?: boolean
+          module: string
+          role_id: string
+        }
+        Update: {
+          can_approve?: boolean
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_view?: boolean
+          module?: string
+          role_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roles: {
+        Row: {
+          active: boolean
+          base_role: Database["public"]["Enums"]["app_role"] | null
+          created_at: string
+          description: string | null
+          id: string
+          is_system: boolean
+          name: string
+        }
+        Insert: {
+          active?: boolean
+          base_role?: Database["public"]["Enums"]["app_role"] | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name: string
+        }
+        Update: {
+          active?: boolean
+          base_role?: Database["public"]["Enums"]["app_role"] | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name?: string
+        }
+        Relationships: []
       }
       task_comments: {
         Row: {
@@ -583,6 +933,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_payroll: { Args: { _month: string }; Returns: Json[] }
+      calculate_salary: {
+        Args: { _employee: string; _month: string }
+        Returns: Json
+      }
       can_view_employee: {
         Args: { _employee: string; _viewer: string }
         Returns: boolean
@@ -600,11 +955,16 @@ export type Database = {
           check_out_longitude: number | null
           check_out_time: string | null
           created_at: string
+          day_status: string | null
+          early_departure_minutes: number | null
           employee_id: string
           id: string
+          late_minutes: number | null
           office_location_id: string | null
+          overtime_minutes: number | null
           status: Database["public"]["Enums"]["attendance_status"]
           updated_at: string
+          worked_minutes: number | null
         }
         SetofOptions: {
           from: "*"
@@ -626,11 +986,16 @@ export type Database = {
           check_out_longitude: number | null
           check_out_time: string | null
           created_at: string
+          day_status: string | null
+          early_departure_minutes: number | null
           employee_id: string
           id: string
+          late_minutes: number | null
           office_location_id: string | null
+          overtime_minutes: number | null
           status: Database["public"]["Enums"]["attendance_status"]
           updated_at: string
+          worked_minutes: number | null
         }
         SetofOptions: {
           from: "*"
@@ -655,6 +1020,34 @@ export type Database = {
       is_manager_of: {
         Args: { _employee: string; _manager: string }
         Returns: boolean
+      }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      leave_balances: {
+        Args: { _employee: string }
+        Returns: {
+          available: number
+          carried: number
+          entitled: number
+          label: string
+          leave_type: Database["public"]["Enums"]["leave_type"]
+          pending: number
+          used: number
+        }[]
+      }
+      my_permissions: {
+        Args: never
+        Returns: {
+          can_approve: boolean
+          can_create: boolean
+          can_delete: boolean
+          can_edit: boolean
+          can_view: boolean
+          module: string
+        }[]
+      }
+      working_day_count: {
+        Args: { _end: string; _location?: string; _start: string }
+        Returns: number
       }
     }
     Enums: {
