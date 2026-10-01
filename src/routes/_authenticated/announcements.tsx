@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/_authenticated/announcements")({
-  head: () => pageHead("Announcements", "Company announcements for WIFS employees."),
+  head: () => pageHead("Announcements", "Company announcements for WiFS employees."),
   component: Page,
 });
 
@@ -48,7 +48,7 @@ function Page() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <PageHeader title="Announcements" description="Latest news from WIFS INDIA." />
+      <PageHeader title="Announcements" description="Latest news from WiFS INDIA." />
       {canPost && (
         <Panel title="New announcement">
           <div className="space-y-3">

@@ -5,17 +5,17 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "WIFS India Employee Portal" },
+      { title: "WiFS India Employee Portal" },
       {
         name: "description",
         content:
-          "Internal WIFS India portal for GPS attendance, tasks, daily work logs, leave and employee management.",
+          "Internal WiFS India portal for GPS attendance, tasks, daily work logs, leave and employee management.",
       },
-      { property: "og:title", content: "WIFS India Employee Portal" },
+      { property: "og:title", content: "WiFS India Employee Portal" },
       {
         property: "og:description",
         content:
-          "Internal WIFS India portal for GPS attendance, tasks, daily work logs, leave and employee management.",
+          "Internal WiFS India portal for GPS attendance, tasks, daily work logs, leave and employee management.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/")({
 });
 
 const FEATURES = [
-  { icon: MapPin, title: "GPS attendance", text: "Check in and out only from inside the WIFS office area." },
+  { icon: MapPin, title: "GPS attendance", text: "Check in and out only from inside the WiFS office area." },
   { icon: ListChecks, title: "Tasks & work logs", text: "Track assigned work and daily progress." },
   { icon: CalendarDays, title: "Leave management", text: "Apply for leave and follow approvals." },
   { icon: ShieldCheck, title: "Role-based access", text: "Employee, Manager, HR and Admin permissions." },
@@ -40,7 +40,7 @@ function Landing() {
             W
           </div>
           <div>
-            <p className="font-display text-sm font-bold tracking-wide">WIFS INDIA</p>
+            <p className="font-display text-sm font-bold tracking-wide">WiFS INDIA</p>
             <p className="text-xs text-muted-foreground">Employee Portal</p>
           </div>
         </div>
@@ -54,11 +54,11 @@ function Landing() {
           Internal use only
         </p>
         <h1 className="mt-4 font-display text-4xl font-bold leading-tight lg:text-5xl">
-          The WIFS India Employee Portal
+          The WiFS India Employee Portal
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground">
           Attendance with office location verification, task tracking, daily work reporting and leave —
-          built for the WIFS team on desktop and mobile.
+          built for the WiFS team on desktop and mobile.
         </p>
         <Button asChild size="lg" className="mt-8">
           <Link to="/auth">Login to continue</Link>

@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/admin/employees")({
-  head: () => pageHead("Employees", "Manage WIFS employees, roles and reporting managers."),
+  head: () => pageHead("Employees", "Manage WiFS employees, roles and reporting managers."),
   component: () => (
     <RequireRole roles={["admin", "hr"]}>
       <Page />

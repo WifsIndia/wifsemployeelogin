@@ -171,7 +171,7 @@ export function AttendanceCard() {
 
           <p className="mt-4 flex items-start gap-2 text-xs text-muted-foreground">
             <MapPin className="mt-0.5 size-3.5 shrink-0" />
-            Your location is read only when you tap Check In or Check Out, to confirm you are at the WIFS office. Please
+            Your location is read only when you tap Check In or Check Out, to confirm you are at the WiFS office. Please
             allow location access when your browser asks.
           </p>
         </>

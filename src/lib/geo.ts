@@ -49,7 +49,7 @@ const MESSAGES: Record<string, string> = {
   GPS_UNAVAILABLE: "We could not read your location. Please switch on GPS and try again.",
   GPS_TIMEOUT: "Getting your location took too long. Please move to an open area and try again.",
   OUTSIDE_OFFICE:
-    "You are outside the WIFS office attendance area. Please move inside the office location and try again.",
+    "You are outside the WiFS office attendance area. Please move inside the office location and try again.",
   OFFICE_NOT_CONFIGURED:
     "The office location has not been configured yet. Please ask your administrator to set it up.",
   POOR_ACCURACY:

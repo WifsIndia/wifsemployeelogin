@@ -11,15 +11,15 @@ import { Loader2, ShieldCheck } from "lucide-react";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Employee Login — WIFS India Portal" },
+      { title: "Employee Login — WiFS India Portal" },
       {
         name: "description",
-        content: "Secure login for WIFS India employees to access attendance, tasks and leave.",
+        content: "Secure login for WiFS India employees to access attendance, tasks and leave.",
       },
-      { property: "og:title", content: "Employee Login — WIFS India Portal" },
+      { property: "og:title", content: "Employee Login — WiFS India Portal" },
       {
         property: "og:description",
-        content: "Secure login for WIFS India employees to access attendance, tasks and leave.",
+        content: "Secure login for WiFS India employees to access attendance, tasks and leave.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -76,7 +76,7 @@ function AuthPage() {
             W
           </div>
           <div>
-            <p className="font-display text-lg font-bold tracking-wide">WIFS INDIA</p>
+            <p className="font-display text-lg font-bold tracking-wide">WiFS INDIA</p>
             <p className="text-sm text-sidebar-foreground/70">Employee Portal</p>
           </div>
         </div>
@@ -100,14 +100,14 @@ function AuthPage() {
             <div className="mb-3 flex size-11 items-center justify-center rounded-lg bg-primary font-display text-xl font-bold text-primary-foreground">
               W
             </div>
-            <p className="font-display text-lg font-bold">WIFS Employee Portal</p>
+            <p className="font-display text-lg font-bold">WiFS Employee Portal</p>
           </div>
           <h1 className="font-display text-2xl font-bold">
             {mode === "login" ? "Employee login" : "Reset your password"}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {mode === "login"
-              ? "Use the work email address provided by WIFS."
+              ? "Use the work email address provided by WiFS."
               : "We will email you a secure reset link."}
           </p>
 
@@ -152,7 +152,7 @@ function AuthPage() {
           </button>
 
           <p className="mt-8 text-xs text-muted-foreground">
-            Accounts are created by WIFS HR or an administrator.{" "}
+            Accounts are created by WiFS HR or an administrator.{" "}
             <Link to="/" className="underline">
               Back to home
             </Link>

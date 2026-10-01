@@ -104,7 +104,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           W
         </div>
         <div>
-          <p className="font-display text-sm font-bold tracking-wide">WIFS INDIA</p>
+          <p className="font-display text-sm font-bold tracking-wide">WiFS INDIA</p>
           <p className="text-xs text-sidebar-foreground/70">Employee Portal</p>
         </div>
       </div>
@@ -153,7 +153,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {open ? <X className="size-5" /> : <Menu className="size-5" />}
           </Button>
           <div className="min-w-0 flex-1">
-            <p className="truncate font-display text-base font-semibold">WIFS Employee Portal</p>
+            <p className="truncate font-display text-base font-semibold">WiFS Employee Portal</p>
           </div>
           <Link to="/notifications" className="relative rounded-md p-2 hover:bg-muted" aria-label="Notifications">
             <Bell className="size-5" />

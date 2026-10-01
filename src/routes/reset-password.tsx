@@ -9,10 +9,10 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
     meta: [
-      { title: "Set a new password — WIFS Employee Portal" },
-      { name: "description", content: "Choose a new password for your WIFS employee account." },
-      { property: "og:title", content: "Set a new password — WIFS Employee Portal" },
-      { property: "og:description", content: "Choose a new password for your WIFS employee account." },
+      { title: "Set a new password — WiFS Employee Portal" },
+      { name: "description", content: "Choose a new password for your WiFS employee account." },
+      { property: "og:title", content: "Set a new password — WiFS Employee Portal" },
+      { property: "og:description", content: "Choose a new password for your WiFS employee account." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "robots", content: "noindex" },
