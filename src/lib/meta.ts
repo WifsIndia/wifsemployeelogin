@@ -1,5 +1,5 @@
 export function pageHead(title: string, description: string) {
-  const full = `${title} — WIFS Employee Portal`;
+  const full = `${title} — WiFS Employee Portal`;
   return {
     meta: [
       { title: full },

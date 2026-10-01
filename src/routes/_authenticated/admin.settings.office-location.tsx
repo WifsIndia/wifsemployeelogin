@@ -31,7 +31,7 @@ function Page() {
     queryKey: ["office-location"],
     queryFn: async () => (await supabase.from("office_locations").select("*").order("created_at").limit(1).maybeSingle()).data,
   });
-  const [f, setF] = useState({ name: "WIFS Office", city: "Nashik", latitude: "", longitude: "", radius_meters: "100", active: true });
+  const [f, setF] = useState({ name: "WiFS Office", city: "Nashik", latitude: "", longitude: "", radius_meters: "100", active: true });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
