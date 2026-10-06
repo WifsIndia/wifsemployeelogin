@@ -43,12 +43,16 @@ const I = {
   ann: { to: "/announcements", label: "Announcements", icon: Megaphone },
   reports: { to: "/reports", label: "Reports", icon: BarChart3 },
   notif: { to: "/notifications", label: "Notifications", icon: Bell },
-  settings: { to: "/admin/settings/office-location", label: "Settings", icon: Settings },
+  settings: { to: "/admin/settings/office-location", label: "Office Location", icon: MapPin },
+  org: { to: "/admin/settings", label: "Settings", icon: Settings },
   docs: { to: "/documents", label: "Documents", icon: FileText },
   profile: { to: "/profile", label: "Profile", icon: UserRound },
 } satisfies Record<string, NavItem>;
 
 const NAV_BY_ROLE: Record<AppRole, NavItem[]> = {
+  agent: [I.dashboard, I.attendance, I.myTasks, I.work, I.leave, I.ann, I.notif, I.docs, I.profile],
+  ado: [I.dashboard, I.team, I.attendance, I.tasks, I.work, I.leave, I.ann, I.notif, I.docs, I.profile],
+  super_admin: [I.dashboard, I.org, I.employees, I.attendance, I.tasks, I.work, I.leave, I.ann, I.reports, I.notif, I.settings, I.docs, I.profile],
   employee: [I.dashboard, I.attendance, I.myTasks, I.work, I.leave, I.ann, I.notif, I.docs, I.profile],
   manager: [I.dashboard, I.team, I.attendance, I.tasks, I.work, I.leave, I.ann, I.notif, I.profile],
   hr: [I.dashboard, I.employees, I.attendance, I.work, I.leave, I.ann, I.reports, I.notif, I.profile],
@@ -121,7 +125,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </nav>
       <div className="border-t border-sidebar-border p-4">
         <p className="truncate text-sm font-medium">{profile?.full_name || "Employee"}</p>
-        <p className="mb-3 text-xs uppercase tracking-wide text-sidebar-primary">{primaryRole}</p>
+        <p className="mb-3 text-xs uppercase tracking-wide text-sidebar-primary">{primaryRole.replace("_", " ")}</p>
         <button
           onClick={handleSignOut}
           className="flex w-full items-center gap-2 rounded-md bg-sidebar-accent px-3 py-2 text-sm text-sidebar-accent-foreground transition-colors hover:opacity-90"
@@ -182,7 +186,7 @@ function SideLink({
   children?: ReactNode;
 }) {
   const Icon = item.icon;
-  const active = pathname === item.to || pathname.startsWith(item.to + "/");
+  const active = pathname === item.to || pathname === item.to + "/" || (item.to !== "/admin/settings" && pathname.startsWith(item.to + "/"));
   return (
     <Link
       to={item.to as "/dashboard"}
