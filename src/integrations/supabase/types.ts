@@ -166,6 +166,33 @@ export type Database = {
         }
         Relationships: []
       }
+      companies: {
+        Row: {
+          active: boolean
+          code: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          active?: boolean
+          code?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          active?: boolean
+          code?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       daily_work_logs: {
         Row: {
           created_at: string
@@ -907,6 +934,39 @@ export type Database = {
           },
         ]
       }
+      user_companies: {
+        Row: {
+          company_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_companies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_companies_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1008,6 +1068,10 @@ export type Database = {
         Args: { lat1: number; lat2: number; lon1: number; lon2: number }
         Returns: number
       }
+      has_permission: {
+        Args: { _action?: string; _module: string; _user: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1015,8 +1079,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      in_company: {
+        Args: { _company: string; _user: string }
+        Returns: boolean
+      }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_hr_or_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_in_hierarchy: {
+        Args: { _employee: string; _supervisor: string }
+        Returns: boolean
+      }
       is_manager_of: {
         Args: { _employee: string; _manager: string }
         Returns: boolean
@@ -1045,13 +1117,21 @@ export type Database = {
           module: string
         }[]
       }
+      shares_company: { Args: { _a: string; _b: string }; Returns: boolean }
       working_day_count: {
         Args: { _end: string; _location?: string; _start: string }
         Returns: number
       }
     }
     Enums: {
-      app_role: "admin" | "hr" | "manager" | "employee" | "super_admin"
+      app_role:
+        | "admin"
+        | "hr"
+        | "manager"
+        | "employee"
+        | "super_admin"
+        | "ado"
+        | "agent"
       attendance_status: "checked_in" | "checked_out"
       employee_status: "active" | "inactive"
       leave_status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED"
@@ -1191,7 +1271,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "hr", "manager", "employee", "super_admin"],
+      app_role: [
+        "admin",
+        "hr",
+        "manager",
+        "employee",
+        "super_admin",
+        "ado",
+        "agent",
+      ],
       attendance_status: ["checked_in", "checked_out"],
       employee_status: ["active", "inactive"],
       leave_status: ["PENDING", "APPROVED", "REJECTED", "CANCELLED"],

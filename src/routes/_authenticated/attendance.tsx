@@ -20,7 +20,7 @@ type Range = "week" | "month" | "custom";
 
 function AttendancePage() {
   const { user, hasRole } = useAuth();
-  const canSeeOthers = hasRole("admin", "hr", "manager");
+  const canSeeOthers = hasRole("admin", "hr", "manager", "ado");
   const [range, setRange] = useState<Range>("week");
   const [from, setFrom] = useState(daysAgoISO(30));
   const [to, setTo] = useState(todayISO());

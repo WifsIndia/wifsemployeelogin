@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 export const Route = createFileRoute("/_authenticated/team")({
   head: () => pageHead("My Team", "Your team members, today's attendance and open tasks."),
   component: () => (
-    <RequireRole roles={["manager", "admin", "hr"]}>
+    <RequireRole roles={["manager", "ado", "admin", "hr"]}>
       <TeamPage />
     </RequireRole>
   ),

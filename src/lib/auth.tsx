@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "admin" | "hr" | "manager" | "employee";
+export type AppRole = "super_admin" | "admin" | "hr" | "manager" | "ado" | "agent" | "employee";
 
 export interface Profile {
   id: string;
@@ -32,7 +32,7 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
-const ROLE_ORDER: AppRole[] = ["admin", "hr", "manager", "employee"];
+const ROLE_ORDER: AppRole[] = ["super_admin", "admin", "hr", "manager", "ado", "agent", "employee"];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     profile,
     roles,
     primaryRole,
-    hasRole: (...list: AppRole[]) => list.some((r) => roles.includes(r)),
+    hasRole: (...list: AppRole[]) => roles.includes("super_admin") || list.some((r) => roles.includes(r)),
     refresh: async () => load(session?.user.id),
     signOut: async () => {
       await supabase.auth.signOut();
