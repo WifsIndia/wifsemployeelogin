@@ -36,7 +36,7 @@ function leaveError(msg: string) {
 function LeavePage() {
   const { user, hasRole } = useAuth();
   const qc = useQueryClient();
-  const canReview = hasRole("admin", "hr", "manager");
+  const canReview = hasRole("admin", "hr", "manager", "ado");
   const [tab, setTab] = useState<"mine" | "review">("mine");
   const [f, setF] = useState({ leave_type: "CASUAL" as LeaveType, start_date: todayISO(), end_date: todayISO(), reason: "", half_day: false });
   const [saving, setSaving] = useState(false);

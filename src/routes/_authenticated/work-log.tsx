@@ -23,7 +23,7 @@ function WorkLogPage() {
   const { user, hasRole } = useAuth();
   const qc = useQueryClient();
   const today = todayISO();
-  const canSeeTeam = hasRole("admin", "hr", "manager");
+  const canSeeTeam = hasRole("admin", "hr", "manager", "ado");
   const [tab, setTab] = useState<"mine" | "team">("mine");
   const [from, setFrom] = useState(daysAgoISO(7));
 

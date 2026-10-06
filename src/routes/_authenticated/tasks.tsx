@@ -47,7 +47,7 @@ interface TaskRow {
 
 function TasksPage() {
   const { user, hasRole } = useAuth();
-  const canManage = hasRole("admin", "manager");
+  const canManage = hasRole("admin", "manager", "ado");
   const [filter, setFilter] = useState<"ALL" | TaskStatus>("ALL");
   const [mineOnly, setMineOnly] = useState(!canManage);
   const [editing, setEditing] = useState<TaskRow | "new" | null>(null);
