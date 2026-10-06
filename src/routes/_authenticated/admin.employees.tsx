@@ -17,13 +17,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export const Route = createFileRoute("/_authenticated/admin/employees")({
   head: () => pageHead("Employees", "Manage WiFS employees, roles and reporting managers."),
   component: () => (
-    <RequireRole roles={["admin", "hr"]}>
+    <RequireRole roles={["super_admin", "admin", "hr"]}>
       <Page />
     </RequireRole>
   ),
 });
 
-const ROLES: AppRole[] = ["employee", "manager", "hr", "admin"];
+const ROLES: AppRole[] = ["employee", "agent", "ado", "manager", "hr", "admin"];
 const NONE = "__none";
 
 type Row = {
@@ -49,7 +49,7 @@ function Page() {
         supabase.from("departments").select("id, name").order("name"),
       ]);
       const roleOf = new Map<string, AppRole>();
-      const order = ["admin", "hr", "manager", "employee"];
+      const order = ["super_admin", "admin", "hr", "manager", "ado", "agent", "employee"];
       for (const x of (r.data ?? []) as { user_id: string; role: AppRole }[]) {
         const cur = roleOf.get(x.user_id);
         if (!cur || order.indexOf(x.role) < order.indexOf(cur)) roleOf.set(x.user_id, x.role);

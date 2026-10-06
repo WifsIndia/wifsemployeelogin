@@ -22,14 +22,23 @@ export const Route = createFileRoute("/_authenticated/leave")({
 });
 
 type LeaveType = Database["public"]["Enums"]["leave_type"];
-const TYPES: LeaveType[] = ["CASUAL", "SICK", "EARNED", "UNPAID", "OTHER"];
+const TYPES: LeaveType[] = ["CASUAL", "SICK", "EARNED", "EMERGENCY", "UNPAID", "OTHER"];
+function leaveError(msg: string) {
+  if (msg.includes("INSUFFICIENT_BALANCE")) return "Not enough leave balance for this request.";
+  if (msg.includes("NOTICE_REQUIRED")) return `This leave type needs ${msg.split("NOTICE_REQUIRED:")[1]?.split(/\D/)[0] ?? "more"} day(s) advance notice.`;
+  if (msg.includes("HALF_DAY_NOT_ALLOWED")) return "Half-day is not allowed for this leave type, or start and end dates differ.";
+  if (msg.includes("LEAVE_TYPE_DISABLED")) return "This leave type is currently disabled.";
+  if (msg.includes("NO_WORKING_DAYS")) return "The selected dates contain no working days.";
+  if (msg.includes("INVALID_DATES")) return "End date cannot be before start date.";
+  return "Could not submit leave request.";
+}
 
 function LeavePage() {
   const { user, hasRole } = useAuth();
   const qc = useQueryClient();
   const canReview = hasRole("admin", "hr", "manager");
   const [tab, setTab] = useState<"mine" | "review">("mine");
-  const [f, setF] = useState({ leave_type: "CASUAL" as LeaveType, start_date: todayISO(), end_date: todayISO(), reason: "" });
+  const [f, setF] = useState({ leave_type: "CASUAL" as LeaveType, start_date: todayISO(), end_date: todayISO(), reason: "", half_day: false });
   const [saving, setSaving] = useState(false);
 
   const mine = useQuery({
@@ -59,7 +68,7 @@ function LeavePage() {
     setSaving(true);
     const { error } = await supabase.from("leave_requests").insert({ ...f, reason: f.reason || null, employee_id: user!.id });
     setSaving(false);
-    if (error) return toast.error("Could not submit leave request.");
+    if (error) return toast.error(leaveError(error.message));
     toast.success("Leave request submitted");
     setF({ ...f, reason: "" });
     qc.invalidateQueries({ queryKey: ["leave"] });
@@ -97,6 +106,7 @@ function LeavePage() {
       )}
       {tab === "mine" ? (
         <>
+          <Balances userId={user!.id} />
           <Panel title="Apply for leave">
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="space-y-1.5">
@@ -122,6 +132,10 @@ function LeavePage() {
                 <Label>End date</Label>
                 <Input type="date" value={f.end_date} onChange={(e) => setF({ ...f, end_date: e.target.value })} />
               </div>
+              <label className="flex items-center gap-2 text-sm sm:col-span-3">
+                <input type="checkbox" checked={f.half_day} onChange={(e) => setF({ ...f, half_day: e.target.checked, end_date: e.target.checked ? f.start_date : f.end_date })} />
+                Half-day (start and end date must be the same)
+              </label>
               <div className="space-y-1.5 sm:col-span-3">
                 <Label>Reason</Label>
                 <Textarea value={f.reason} onChange={(e) => setF({ ...f, reason: e.target.value })} maxLength={1000} />
@@ -218,5 +232,26 @@ function ReviewRow({
         l.review_note && <p className="text-xs italic text-muted-foreground">Note: {l.review_note}</p>
       )}
     </li>
+  );
+}
+
+function Balances({ userId }: { userId: string }) {
+  const q = useQuery({
+    queryKey: ["leave-balances", userId],
+    queryFn: async () => (await supabase.rpc("leave_balances", { _employee: userId })).data ?? [],
+  });
+  if (!q.data?.length) return null;
+  return (
+    <Panel title="My leave balance">
+      <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        {q.data.map((b) => (
+          <div key={b.leave_type} className="rounded-lg border border-border p-3">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">{b.label}</p>
+            <p className="font-display text-xl font-bold">{Number(b.available)}</p>
+            <p className="text-[11px] text-muted-foreground">used {Number(b.used)} · pending {Number(b.pending)}</p>
+          </div>
+        ))}
+      </div>
+    </Panel>
   );
 }

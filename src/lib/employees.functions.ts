@@ -6,7 +6,7 @@ const schema = z.object({
   email: z.string().trim().email().max(255),
   password: z.string().min(8).max(72),
   full_name: z.string().trim().min(1).max(120),
-  role: z.enum(["admin", "hr", "manager", "employee"]),
+  role: z.enum(["admin", "hr", "manager", "employee", "ado", "agent"]),
 });
 
 export const createEmployee = createServerFn({ method: "POST" })
