@@ -10,7 +10,6 @@ import { Panel } from "@/components/TeamOverview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, NativeSelect, money, tableCls, tdCls, thCls } from "@/components/settings/shared";
-import { ConfirmDelete } from "@/components/settings/shared";
 
 export const Route = createFileRoute("/_authenticated/payroll")({
   head: () => pageHead("Payroll", "Monthly salary calculation with a clear breakdown for each employee."),
@@ -77,7 +76,7 @@ function Page() {
   if (!perms.data?.view) return <AccessDenied />;
   const canEdit = perms.data.edit && (isSuper || emp !== user?.id);
   const b = (rec?.breakdown ?? null) as B | null;
-  const cur = (b?.currency as string) || "INR";
+  const cur = (b?.["currency"] as string) || "INR";
   const m = (k: string) => money(b?.[k] as number, cur);
 
   return (
@@ -94,7 +93,7 @@ function Page() {
           {canEdit && (
             <div className="flex items-end gap-2">
               <Button onClick={generate} disabled={busy || !emp || rec?.status === "finalized"}>{rec ? "Recalculate" : "Calculate"}</Button>
-              {rec?.status === "draft" && <ConfirmDelete label="Finalize" title="Finalize this payroll?" description="Finalized payroll can't be recalculated unless a Super Admin reopens it." onConfirm={() => setStatus("finalized")} />}
+              {rec?.status === "draft" && <Button variant="secondary" onClick={() => { if (window.confirm("Finalize this payroll? It can't be recalculated unless a Super Admin reopens it.")) setStatus("finalized"); }}>Finalize</Button>}
               {rec?.status === "finalized" && isSuper && <Button variant="outline" onClick={() => setStatus("draft")}>Reopen</Button>}
             </div>
           )}
@@ -106,12 +105,12 @@ function Page() {
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           <Panel title="Salary breakdown" action={<StatusPill status={rec.status} />}>
-            {!b.has_salary && <p className="mb-2 rounded-md bg-warning/15 p-2 text-sm">No salary is set for this employee.</p>}
+            {!b["has_salary"] && <p className="mb-2 rounded-md bg-warning/15 p-2 text-sm">No salary is set for this employee.</p>}
             <Rows rows={[
               ["Basic salary", m("basic_salary")], ["Allowances", m("allowances")], ["Gross monthly salary", m("gross_salary")],
-              [`Daily rate (gross ÷ ${b.divisor}, ${b.divisor_mode} rule)`, m("daily_salary")],
-              [`Salary for period (${b.period_start} to ${b.period_end})`, m("prorated_base")],
-              [`Unpaid deduction (${Number(b.unpaid_leave_days) + Number(b.absent_days)} days × daily rate)`, `− ${m("unpaid_deduction")}`],
+              [`Daily rate (gross ÷ ${b["divisor"]}, ${b["divisor_mode"]} rule)`, m("daily_salary")],
+              [`Salary for period (${b["period_start"]} to ${b["period_end"]})`, m("prorated_base")],
+              [`Unpaid deduction (${Number(b["unpaid_leave_days"]) + Number(b["absent_days"])} days × daily rate)`, `− ${m("unpaid_deduction")}`],
               ["Other deductions", `− ${m("other_deductions")}`],
               ["Total deductions", `− ${m("total_deductions")}`],
             ]} />
@@ -121,13 +120,13 @@ function Page() {
           </Panel>
           <Panel title="Days">
             <Rows rows={[
-              ["Working days in month", String(b.month_working_days)], ["Holidays (not counted)", String(b.holidays)],
-              ["Applicable working days", String(b.applicable_working_days)], ["Days worked", String(b.days_worked)],
-              ["Paid leave days", String(b.paid_leave_days)], ["Unpaid leave days", String(b.unpaid_leave_days)],
-              ["Paid leave over yearly allowance (made unpaid)", String(b.paid_leave_over_allowance)],
-              ["Absent days (no attendance, no leave)", String(b.absent_days)], ["Upcoming days (not yet counted)", String(b.upcoming_days)],
+              ["Working days in month", String(b["month_working_days"])], ["Holidays (not counted)", String(b["holidays"])],
+              ["Applicable working days", String(b["applicable_working_days"])], ["Days worked", String(b["days_worked"])],
+              ["Paid leave days", String(b["paid_leave_days"])], ["Unpaid leave days", String(b["unpaid_leave_days"])],
+              ["Paid leave over yearly allowance (made unpaid)", String(b["paid_leave_over_allowance"])],
+              ["Absent days (no attendance, no leave)", String(b["absent_days"])], ["Upcoming days (not yet counted)", String(b["upcoming_days"])],
             ]} />
-            <p className="mt-2 text-xs text-muted-foreground">Calculated {new Date(rec.generated_at).toLocaleString()}. Joining date: {String(b.joining_date ?? "—")}.</p>
+            <p className="mt-2 text-xs text-muted-foreground">Calculated {new Date(rec.generated_at).toLocaleString()}. Joining date: {String(b["joining_date"] ?? "—")}.</p>
           </Panel>
         </div>
       )}
