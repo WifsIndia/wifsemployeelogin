@@ -82,13 +82,13 @@ function Page() {
   return (
     <div className="space-y-4">
       <PageHeader title="Payroll" description="Monthly salary calculation based on salary, joining date, leave policy, attendance and holidays." />
-      <Panel title="Select">
+      <Panel title={(people.data?.length ?? 0) > 1 ? "Select" : "My payroll"}>
         <div className="grid gap-3 sm:grid-cols-3">
-          <Field label="Employee">
+          {(people.data?.length ?? 0) > 1 && <Field label="Employee">
             <NativeSelect value={emp} onChange={(e) => setEmp(e.target.value)}>
               {(people.data ?? []).map((p) => <option key={p.id} value={p.id}>{p.full_name}{p.employee_code ? ` (${p.employee_code})` : ""}</option>)}
             </NativeSelect>
-          </Field>
+          </Field>}
           <Field label="Month"><Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} /></Field>
           {canEdit && (
             <div className="flex items-end gap-2">
