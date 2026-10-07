@@ -46,6 +46,7 @@ export function useMyOffices() {
 }
 
 interface LocState {
+  office?: string | null;
   distance: number | null;
   accuracy: number;
   inside: boolean | null;
@@ -83,18 +84,21 @@ export function AttendanceCard() {
       catch (err) { if (gpsRequired) throw err; c = { latitude: null, longitude: null, accuracy: null }; }
       let distance: number | null = null;
       let inside: boolean | null = null;
+      let officeName: string | null = null;
       if (c.latitude != null && c.longitude != null && located.length) {
         // Compare against every authorized location; use the closest one inside its radius, else the nearest.
         const scored = located.map((o) => ({
           d: distanceMeters(c.latitude!, c.longitude!, o.latitude!, o.longitude!),
           r: o.radius_meters,
+          name: o.name,
         }));
         const hit = scored.filter((s) => s.d <= s.r).sort((a, b) => a.d - b.d)[0];
         const nearest = hit ?? scored.sort((a, b) => a.d - b.d)[0]!;
         distance = nearest.d;
         inside = !!hit;
+        officeName = nearest.name;
       }
-      if (c.accuracy != null) setLoc({ distance, accuracy: c.accuracy, inside });
+      if (c.accuracy != null) setLoc({ office: officeName, distance, accuracy: c.accuracy, inside });
       // The database performs the authoritative location, radius and accuracy checks.
       const { error: rpcError } = await supabase.rpc(kind === "in" ? "check_in" : "check_out", {
         _lat: c.latitude as number,
@@ -102,6 +106,8 @@ export function AttendanceCard() {
         _accuracy: c.accuracy as number,
       });
       if (rpcError) throw new Error(rpcError.message);
+      // Accepted by the server: the position is inside an authorized office.
+      if (c.accuracy != null) setLoc({ office: officeName, distance, accuracy: c.accuracy, inside: true });
       toast.success(kind === "in" ? "Checked in successfully" : "Checked out successfully");
       await qc.invalidateQueries({ queryKey: ["attendance-today"] });
       await qc.invalidateQueries({ queryKey: ["attendance"] });
@@ -177,8 +183,10 @@ export function AttendanceCard() {
                 <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
               )}
               <span>
-                {loc.inside === false ? "You appear to be outside the office area" : "You are inside the office area"}
-                {loc.distance != null && ` (about ${Math.round(loc.distance)} m from office)`}. Location accuracy: ±
+                {loc.inside === false
+                  ? "You appear to be outside your authorized office locations"
+                  : `You are inside an authorized office location${loc.office ? `: ${loc.office}` : ""}`}
+                {loc.distance != null && ` (about ${Math.round(loc.distance)} m from ${loc.inside === false ? "the nearest office" : "the office point"})`}. Location accuracy: ±
                 {Math.round(loc.accuracy)} m.
               </span>
             </p>
