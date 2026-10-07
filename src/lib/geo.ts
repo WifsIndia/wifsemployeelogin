@@ -50,6 +50,8 @@ const MESSAGES: Record<string, string> = {
   GPS_TIMEOUT: "Getting your location took too long. Please move to an open area and try again.",
   OUTSIDE_OFFICE:
     "You are outside the WiFS office attendance area. Please move inside the office location and try again.",
+  NO_AUTHORIZED_LOCATION:
+    "You have not been assigned an office location for attendance. Please ask your administrator.",
   OFFICE_NOT_CONFIGURED:
     "The office location has not been configured yet. Please ask your administrator to set it up.",
   POOR_ACCURACY:
