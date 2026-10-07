@@ -130,14 +130,17 @@ function WorkLogPage() {
 
       {tab === "mine" ? (
         <>
-          <Panel title={`Today's log · ${formatDate(today)}`}>
+          <Panel
+            title={`Work log · ${formatDate(logDate)}`}
+            action={<Input type="date" max={today} value={logDate} onChange={(e) => setLogDate(e.target.value || today)} className="w-auto" />}
+          >
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <Label>Summary *</Label>
                 <Input value={f.summary} onChange={(e) => setF({ ...f, summary: e.target.value })} maxLength={300} />
               </div>
               <div className="space-y-1.5">
-                <Label>Work completed</Label>
+                <Label>Work description</Label>
                 <Textarea value={f.work_completed} onChange={(e) => setF({ ...f, work_completed: e.target.value })} maxLength={4000} />
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
@@ -145,10 +148,38 @@ function WorkLogPage() {
                   <Label>Hours worked</Label>
                   <Input type="number" min={0} max={24} step={0.5} value={f.hours_worked} onChange={(e) => setF({ ...f, hours_worked: e.target.value })} />
                 </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label>Notes</Label>
-                  <Input value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} maxLength={1000} />
+                <div className="space-y-1.5">
+                  <Label>Related task (optional)</Label>
+                  <select
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={f.task_id}
+                    onChange={(e) => setF({ ...f, task_id: e.target.value })}
+                  >
+                    <option value="">No task</option>
+                    {(myTasks.data ?? []).map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.title}
+                      </option>
+                    ))}
+                  </select>
                 </div>
+                <div className="space-y-1.5">
+                  <Label>Status</Label>
+                  <select
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={f.status}
+                    onChange={(e) => setF({ ...f, status: e.target.value })}
+                  >
+                    <option value="">—</option>
+                    <option value="IN_PROGRESS">In progress</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="BLOCKED">Blocked</option>
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Notes / comments</Label>
+                <Input value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} maxLength={1000} />
               </div>
               <Button onClick={save} disabled={saving}>
                 {saving && <Loader2 className="size-4 animate-spin" />} {todayLog ? "Update log" : "Submit log"}
@@ -156,7 +187,7 @@ function WorkLogPage() {
             </div>
           </Panel>
           <Panel title="Previous logs">
-            {mine.isLoading ? <Loading /> : <LogList logs={(mine.data ?? []).filter((l) => l.log_date !== today)} />}
+            {mine.isLoading ? <Loading /> : <LogList logs={(mine.data ?? []).filter((l) => l.log_date !== logDate)} />}
           </Panel>
         </>
       ) : (
