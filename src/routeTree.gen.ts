@@ -19,6 +19,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedLeaveRouteImport } from './routes/_authenticated/leave'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
+import { Route as AuthenticatedPayrollRouteImport } from './routes/_authenticated/payroll'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
@@ -79,6 +80,11 @@ const AuthenticatedNotificationsRoute =
     path: '/notifications',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPayrollRoute = AuthenticatedPayrollRouteImport.update({
+  id: '/payroll',
+  path: '/payroll',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -133,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/documents': typeof AuthenticatedDocumentsRoute
   '/leave': typeof AuthenticatedLeaveRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
+  '/payroll': typeof AuthenticatedPayrollRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/tasks': typeof AuthenticatedTasksRoute
@@ -152,6 +159,7 @@ export interface FileRoutesByTo {
   '/documents': typeof AuthenticatedDocumentsRoute
   '/leave': typeof AuthenticatedLeaveRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
+  '/payroll': typeof AuthenticatedPayrollRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/tasks': typeof AuthenticatedTasksRoute
@@ -173,6 +181,7 @@ export interface FileRoutesById {
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/leave': typeof AuthenticatedLeaveRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
+  '/_authenticated/payroll': typeof AuthenticatedPayrollRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
@@ -194,6 +203,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/leave'
     | '/notifications'
+    | '/payroll'
     | '/profile'
     | '/reports'
     | '/tasks'
@@ -213,6 +223,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/leave'
     | '/notifications'
+    | '/payroll'
     | '/profile'
     | '/reports'
     | '/tasks'
@@ -233,6 +244,7 @@ export interface FileRouteTypes {
     | '/_authenticated/documents'
     | '/_authenticated/leave'
     | '/_authenticated/notifications'
+    | '/_authenticated/payroll'
     | '/_authenticated/profile'
     | '/_authenticated/reports'
     | '/_authenticated/tasks'
@@ -322,6 +334,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/payroll': {
+      id: '/_authenticated/payroll'
+      path: '/payroll'
+      fullPath: '/payroll'
+      preLoaderRoute: typeof AuthenticatedPayrollRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/profile': {
       id: '/_authenticated/profile'
       path: '/profile'
@@ -388,6 +407,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
   AuthenticatedLeaveRoute: typeof AuthenticatedLeaveRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
+  AuthenticatedPayrollRoute: typeof AuthenticatedPayrollRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
@@ -405,6 +425,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
   AuthenticatedLeaveRoute: AuthenticatedLeaveRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
+  AuthenticatedPayrollRoute: AuthenticatedPayrollRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
