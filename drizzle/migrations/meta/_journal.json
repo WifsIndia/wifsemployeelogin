@@ -155,6 +155,13 @@
       "when": 1791396050397,
       "tag": "0021_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1791397507347,
+      "tag": "0022_attendance_accuracy_and_day",
+      "breakpoints": true
     }
   ]
 }
