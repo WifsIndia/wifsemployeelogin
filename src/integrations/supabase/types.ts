@@ -317,6 +317,39 @@ export type Database = {
           },
         ]
       }
+      employee_locations: {
+        Row: {
+          created_at: string
+          location_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          location_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          location_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_locations_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "office_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_locations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       holidays: {
         Row: {
           active: boolean
@@ -1002,10 +1035,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      authorized_office_for: {
+        Args: { _lat: number; _lon: number; _uid: string }
+        Returns: {
+          dist: number
+          office_id: string
+        }[]
+      }
       calculate_payroll: { Args: { _month: string }; Returns: Json[] }
       calculate_salary: {
         Args: { _employee: string; _month: string }
         Returns: Json
+      }
+      can_manage_locations: {
+        Args: { _actor: string; _target: string }
+        Returns: boolean
       }
       can_view_employee: {
         Args: { _employee: string; _viewer: string }
