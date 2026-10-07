@@ -85,6 +85,20 @@
       "when": 1791373461783,
       "tag": "0011_leave_policy_sets",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791373746938,
+      "tag": "0012_monthly_payroll",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791373813945,
+      "tag": "0013_payroll_attendance_fix",
+      "breakpoints": true
     }
   ]
 }

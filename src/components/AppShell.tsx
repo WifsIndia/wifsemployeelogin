@@ -19,6 +19,7 @@ import {
   X,
   UsersRound,
   Loader2,
+  Wallet,
 } from "lucide-react";
 import { useAuth, type AppRole } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,6 +46,7 @@ const I = {
   notif: { to: "/notifications", label: "Notifications", icon: Bell },
   settings: { to: "/admin/settings/office-location", label: "Office Location", icon: MapPin },
   org: { to: "/super-admin/settings", label: "Settings", icon: Settings },
+  payroll: { to: "/payroll", label: "Payroll", icon: Wallet },
   docs: { to: "/documents", label: "Documents", icon: FileText },
   profile: { to: "/profile", label: "Profile", icon: UserRound },
 } satisfies Record<string, NavItem>;
@@ -99,7 +101,17 @@ export function AppShell({ children }: { children: ReactNode }) {
     navigate({ to: "/auth", replace: true });
   };
 
-  const items = NAV_BY_ROLE[primaryRole];
+  const { data: canPayroll = false } = useQuery({
+    queryKey: ["can-view-payroll", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase.rpc("my_permissions");
+      return (data ?? []).some((p) => p.module === "payroll" && p.can_view);
+    },
+  });
+  const base = NAV_BY_ROLE[primaryRole];
+  const showPayroll = canPayroll || primaryRole === "super_admin";
+  const items = showPayroll ? [...base.slice(0, -1), I.payroll, base[base.length - 1]!] : base;
 
   const sidebar = (
     <div className="flex h-full w-64 flex-col bg-sidebar text-sidebar-foreground">
