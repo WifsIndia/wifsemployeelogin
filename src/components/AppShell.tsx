@@ -101,15 +101,25 @@ export function AppShell({ children }: { children: ReactNode }) {
     navigate({ to: "/auth", replace: true });
   };
 
-  const { data: canPayroll = false } = useQuery({
-    queryKey: ["can-view-payroll", user?.id],
+  const { data: navPerms = { payroll: false, reports: false } } = useQuery({
+    queryKey: ["nav-perms", user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
       const { data } = await supabase.rpc("my_permissions");
-      return (data ?? []).some((p) => p.module === "payroll" && p.can_view);
+      const rows = data ?? [];
+      return {
+        payroll: rows.some((p) => p.module === "payroll" && p.can_view),
+        reports: rows.some((p) => p.module === "reports" && p.can_view),
+      };
     },
   });
-  const base = NAV_BY_ROLE[primaryRole];
+  const canPayroll = navPerms.payroll;
+  const roleBase = NAV_BY_ROLE[primaryRole];
+  // Managers/employees get Reports only when their role has Reports "View" (ADO/Agent unchanged).
+  const base =
+    navPerms.reports && (primaryRole === "manager" || primaryRole === "employee") && !roleBase.includes(I.reports)
+      ? [...roleBase.slice(0, -1), I.reports, roleBase[roleBase.length - 1]!]
+      : roleBase;
   const showPayroll = canPayroll || primaryRole === "super_admin";
   const items = showPayroll ? [...base.slice(0, -1), I.payroll, base[base.length - 1]!] : base;
 
