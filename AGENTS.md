@@ -13,3 +13,4 @@
 - Task changes are recorded by the `tasks_history` trigger into `task_history`; never write history from the client — keeps history tamper-proof.
 - Responsive sizing for tables and dialogs belongs in the existing shared UI components; page layouts use shrinking grid tracks and local scroll regions to prevent viewport overflow without duplicating views.
 - Personal employee documents reuse `documents` with `employee_id` set; access is the employee themself or viewers allowed by can_view_employee, uploads/edits via can_manage_employee_docs — one document system for shared and personal files.
+- Processing/locking state for actions lives in the shared Button (async onClick → spinner, disabled, no repeat), Switch, Dialog (can't close mid-request) and ConfirmDelete; pages must return the promise from their handlers instead of adding per-page busy flags.

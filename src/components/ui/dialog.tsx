@@ -5,6 +5,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { PendingContext, usePendingScope } from "@/components/ui/pending";
 
 const Dialog = DialogPrimitive.Root;
 
@@ -32,7 +33,10 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+>(({ className, children, onEscapeKeyDown, onPointerDownOutside, onInteractOutside, ...props }, ref) => {
+  const scope = usePendingScope();
+  return (
+  <PendingContext.Provider value={scope}>
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -42,15 +46,21 @@ const DialogContent = React.forwardRef<
         className,
       )}
       {...props}
+      aria-busy={scope.busy || undefined}
+      onEscapeKeyDown={(e) => { if (scope.busy) e.preventDefault(); onEscapeKeyDown?.(e); }}
+      onPointerDownOutside={(e) => { if (scope.busy) e.preventDefault(); onPointerDownOutside?.(e); }}
+      onInteractOutside={(e) => { if (scope.busy) e.preventDefault(); onInteractOutside?.(e); }}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-2 top-2 flex size-11 items-center justify-center rounded-sm opacity-70 ring-offset-background cursor-pointer transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground sm:right-4 sm:top-4 sm:size-6">
+      <DialogPrimitive.Close disabled={scope.busy} className="absolute right-2 top-2 flex size-11 items-center justify-center rounded-sm opacity-70 ring-offset-background cursor-pointer transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground sm:right-4 sm:top-4 sm:size-6">
         <X className="h-4 w-4" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>
   </DialogPortal>
-));
+  </PendingContext.Provider>
+  );
+});
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
