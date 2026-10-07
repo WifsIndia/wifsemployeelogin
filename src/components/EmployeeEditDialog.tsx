@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -36,6 +36,7 @@ export function EmployeeEditDialog({ row, people, onClose, onSaved }: {
   const canPolicy = isSuper || (hasRole("admin", "hr") && !isSelf);
   const [comp, setComp] = useState({ basic_salary: 0, allowances: 0, deductions: 0, payment_mode: "bank", bank_name: "", account_holder: "", account_number: "", ifsc: "", upi_id: "", paid_leave_allowance: "", bond: "", employment_description: "" });
   const [saving, setSaving] = useState(false);
+  const qc = useQueryClient();
 
   const meta = useQuery({
     queryKey: ["emp-edit-meta", row.id],
@@ -120,6 +121,7 @@ export function EmployeeEditDialog({ row, people, onClose, onSaved }: {
         const r = await supabase.from("employee_compensation").upsert({ employee_id: row.id, ...comp, bank_name: comp.bank_name || null, account_holder: comp.account_holder || null, account_number: comp.account_number || null, ifsc: comp.ifsc || null, upi_id: comp.upi_id || null, paid_leave_allowance: comp.paid_leave_allowance === "" ? null : Number(comp.paid_leave_allowance), bond: comp.bond.trim() || null, employment_description: comp.employment_description.trim() || null });
         if (r.error) throw new Error("Could not save salary details.");
       }
+      for (const k of ["my-assignments", "leave-balances", "my-leave-policy", "people", "emp-edit-meta"]) qc.invalidateQueries({ queryKey: [k] });
       toast.success("Employee updated");
       onSaved();
     } catch (e) {
