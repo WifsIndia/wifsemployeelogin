@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { formatDate, formatTime, todayISO } from "@/lib/format";
 import { Empty, Loading, StatCard } from "@/components/AppShell";
+import { usePermission } from "@/lib/permissions";
 
 type Scope = "team" | "all";
 
@@ -28,8 +29,24 @@ export function useScopedPeople(scope: Scope) {
   });
 }
 
-export function TeamOverview({ scope, variant }: { scope: Scope; variant: "manager" | "hr" | "admin" }) {
+export function TeamOverview({
+  scope,
+  variant,
+  gate = false,
+}: {
+  scope: Scope;
+  variant: "manager" | "hr" | "admin";
+  /** Hide sections the viewer has no View permission for. */
+  gate?: boolean;
+}) {
   const today = todayISO();
+  const { hasRole } = useAuth();
+  const pAtt = usePermission("attendance");
+  const pLeave = usePermission("leave");
+  const pTasks = usePermission("tasks");
+  const pLogs = usePermission("work_logs");
+  const all = !gate || hasRole("super_admin");
+  const can = { att: all || pAtt.view, leave: all || pLeave.view, tasks: all || pTasks.view, logs: all || pLogs.view };
   const people = useScopedPeople(scope);
   const ids = (people.data ?? []).map((p) => p.id);
 
@@ -72,24 +89,25 @@ export function TeamOverview({ scope, variant }: { scope: Scope; variant: "manag
   const working = s.att.filter((a) => a.status === "checked_in").length;
   const checkedOut = present - working;
   const total = ids.length;
-  const byStatus = ["NOT_STARTED", "IN_PROGRESS", "ON_HOLD", "COMPLETED"].map((st) => ({
+  const byStatus = ["NOT_STARTED", "IN_PROGRESS", "ON_HOLD", "COMPLETED", "CANCELLED"].map((st) => ({
     st,
     n: s.tasks.filter((t) => t.status === st).length,
   }));
   const completed = byStatus[3]!.n;
-  const active = s.tasks.length - completed;
+  const active = byStatus[0]!.n + byStatus[1]!.n + byStatus[2]!.n;
+  const stLabel = (st: string) => (st === "NOT_STARTED" ? "pending" : st.replace("_", " ").toLowerCase());
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard label={scope === "team" ? "Team size" : "Total employees"} value={total} />
-        <StatCard label="Present today" value={present} />
-        <StatCard label="Absent today" value={Math.max(0, total - present)} />
-        <StatCard label="Currently working" value={working} />
-        {variant !== "hr" && <StatCard label="Checked out" value={checkedOut} />}
-        <StatCard label="Pending leave" value={s.leave.length} />
-        {variant !== "hr" && <StatCard label="Active tasks" value={active} />}
-        {variant !== "hr" && (
+        {can.att && <StatCard label="Present today" value={present} />}
+        {can.att && <StatCard label="Absent today" value={Math.max(0, total - present)} />}
+        {can.att && <StatCard label="Currently working" value={working} />}
+        {can.att && variant !== "hr" && <StatCard label="Checked out" value={checkedOut} />}
+        {can.leave && <StatCard label="Pending leave" value={s.leave.length} />}
+        {can.tasks && variant !== "hr" && <StatCard label="Active tasks" value={active} />}
+        {can.tasks && variant !== "hr" && (
           <StatCard
             label="Completed tasks"
             value={completed}
@@ -99,7 +117,7 @@ export function TeamOverview({ scope, variant }: { scope: Scope; variant: "manag
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title="Attendance today">
+        {can.att && <Panel title="Attendance today">
           <Bars
             rows={[
               { label: "Working", n: working },
@@ -108,7 +126,7 @@ export function TeamOverview({ scope, variant }: { scope: Scope; variant: "manag
             ]}
             max={Math.max(total, 1)}
           />
-        </Panel>
+        </Panel>}
         {variant === "hr" ? (
           <Panel title="Departments">
             <Bars
@@ -119,15 +137,15 @@ export function TeamOverview({ scope, variant }: { scope: Scope; variant: "manag
               max={Math.max(total, 1)}
             />
           </Panel>
-        ) : (
+        ) : can.tasks && (
           <Panel title="Tasks by status">
             <Bars
-              rows={byStatus.map((b) => ({ label: b.st.replace("_", " ").toLowerCase(), n: b.n }))}
+              rows={byStatus.map((b) => ({ label: stLabel(b.st), n: b.n }))}
               max={Math.max(s.tasks.length, 1)}
             />
           </Panel>
         )}
-        <Panel title="Pending leave requests">
+        {can.leave && <Panel title="Pending leave requests">
           {s.leave.length === 0 ? (
             <Empty>No pending requests.</Empty>
           ) : (
@@ -142,8 +160,8 @@ export function TeamOverview({ scope, variant }: { scope: Scope; variant: "manag
               ))}
             </ul>
           )}
-        </Panel>
-        <Panel title="Recent work logs">
+        </Panel>}
+        {can.logs && <Panel title="Recent work logs">
           {s.logs.length === 0 ? (
             <Empty>No work logs yet.</Empty>
           ) : (
@@ -159,8 +177,8 @@ export function TeamOverview({ scope, variant }: { scope: Scope; variant: "manag
               ))}
             </ul>
           )}
-        </Panel>
-        {variant === "hr" && (
+        </Panel>}
+        {variant === "hr" && can.att && (
           <Panel title="Recent activity (today's check-ins)">
             {s.att.length === 0 ? (
               <Empty>No check-ins yet today.</Empty>
