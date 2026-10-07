@@ -70,6 +70,7 @@ export function TeamOverview({
           .order("log_date", { ascending: false })
           .limit(8),
         supabase.from("departments").select("id, name"),
+        supabase.from("leave_requests").select("employee_id").eq("status", "APPROVED").lte("start_date", today).gte("end_date", today).in("employee_id", ids),
       ]);
       return {
         att: att.data ?? [],
@@ -77,6 +78,7 @@ export function TeamOverview({
         tasks: tasks.data ?? [],
         logs: logs.data ?? [],
         depts: depts.data ?? [],
+        onLeave: (onLeaveQ.data ?? []).map((x) => x.employee_id),
       };
     },
   });
