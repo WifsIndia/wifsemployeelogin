@@ -30,6 +30,7 @@ interface DocRow {
   name: string;
   folder_id: string | null;
   company_id: string | null;
+  employee_id: string | null;
   file_path: string;
   mime_type: string | null;
   size_bytes: number;
@@ -42,7 +43,9 @@ const fmtSize = (b: number) =>
 const typeOf = (d: DocRow) => (d.name.includes(".") ? d.name.split(".").pop()!.toUpperCase() : d.mime_type ?? "File");
 
 function Page() {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
+  const canManagePeople = hasRole("super_admin", "admin", "hr");
+  const [owner, setOwner] = useState("");
   const perm = usePermission("documents");
   const qc = useQueryClient();
   const [folderId, setFolderId] = useState<string | null>(null);
@@ -65,7 +68,7 @@ function Page() {
       ((
         await supabase
           .from("documents")
-          .select("id, name, folder_id, company_id, file_path, mime_type, size_bytes, created_at, uploader:profiles!documents_uploaded_by_fkey(full_name)")
+          .select("id, name, folder_id, company_id, employee_id, file_path, mime_type, size_bytes, created_at, uploader:profiles!documents_uploaded_by_fkey(full_name)")
           .order("created_at", { ascending: false })
       ).data ?? []) as unknown as DocRow[],
   });
@@ -73,6 +76,15 @@ function Page() {
     queryKey: ["companies-list"],
     queryFn: async () => (await supabase.from("companies").select("id, name").eq("active", true).order("name")).data ?? [],
   });
+  const people = useQuery({
+    queryKey: ["doc-people", user?.id],
+    enabled: !!user && canManagePeople,
+    queryFn: async () =>
+      (await supabase.from("profiles").select("id, full_name, employee_code").eq("status", "active").order("full_name")).data ?? [],
+  });
+  const ownerDocs = (docs.data ?? []).filter((d) => (owner ? d.employee_id === owner : !d.employee_id));
+  const hasOwn = (docs.data ?? []).some((d) => d.employee_id === user?.id);
+  const canUploadHere = perm.create && (!owner || canManagePeople);
   const companyName = (id: string | null) => (id ? companies.data?.find((c) => c.id === id)?.name ?? "Company" : "All staff");
 
   const refresh = () => {
@@ -87,7 +99,7 @@ function Page() {
 
   const q = search.trim().toLowerCase();
   const subFolders = q ? [] : allFolders.filter((f) => f.parent_id === folderId);
-  const files = (docs.data ?? []).filter((d) => (q ? d.name.toLowerCase().includes(q) : d.folder_id === folderId));
+  const files = ownerDocs.filter((d) => (q ? d.name.toLowerCase().includes(q) : d.folder_id === folderId));
   const folderPath = (id: string | null) => {
     const names: string[] = [];
     for (let f = allFolders.find((x) => x.id === id); f; f = allFolders.find((x) => x.id === f!.parent_id)) names.unshift(f.name);
@@ -117,6 +129,7 @@ function Page() {
         size_bytes: file.size,
         folder_id: folderId,
         company_id: company,
+        employee_id: owner || null,
         uploaded_by: user.id,
       });
       if (error) {
@@ -171,7 +184,7 @@ function Page() {
                 <FolderPlus className="size-4" /> New folder
               </Button>
             )}
-            {perm.create && (
+            {canUploadHere && (
               <Button onClick={() => fileRef.current?.click()} disabled={uploading}>
                 {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />} Upload
               </Button>
@@ -180,6 +193,23 @@ function Page() {
           </div>
         }
       />
+
+      {(canManagePeople || hasOwn) && (
+        <select
+          className="h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-base sm:h-9 md:text-sm"
+          value={owner}
+          onChange={(e) => setOwner(e.target.value)}
+          aria-label="Whose documents"
+        >
+          <option value="">Shared documents</option>
+          {user && <option value={user.id}>My personal documents</option>}
+          {(people.data ?? []).filter((p) => p.id !== user?.id).map((p) => (
+            <option key={p.id} value={p.id}>
+              Personal: {p.full_name}{p.employee_code ? ` (${p.employee_code})` : ""}
+            </option>
+          ))}
+        </select>
+      )}
 
       <div className="grid min-w-0 gap-3 sm:grid-cols-2">
         <div className="relative min-w-0">
