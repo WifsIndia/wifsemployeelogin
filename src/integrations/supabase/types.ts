@@ -776,6 +776,73 @@ export type Database = {
         }
         Relationships: []
       }
+      payroll_records: {
+        Row: {
+          breakdown: Json
+          employee_id: string
+          finalized_at: string | null
+          finalized_by: string | null
+          generated_at: string
+          generated_by: string | null
+          gross_salary: number
+          id: string
+          month: string
+          net_salary: number
+          status: string
+          total_deductions: number
+        }
+        Insert: {
+          breakdown?: Json
+          employee_id: string
+          finalized_at?: string | null
+          finalized_by?: string | null
+          generated_at?: string
+          generated_by?: string | null
+          gross_salary?: number
+          id?: string
+          month: string
+          net_salary?: number
+          status?: string
+          total_deductions?: number
+        }
+        Update: {
+          breakdown?: Json
+          employee_id?: string
+          finalized_at?: string | null
+          finalized_by?: string | null
+          generated_at?: string
+          generated_by?: string | null
+          gross_salary?: number
+          id?: string
+          month?: string
+          net_salary?: number
+          status?: string
+          total_deductions?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_records_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_records_finalized_by_fkey"
+            columns: ["finalized_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_records_generated_by_fkey"
+            columns: ["generated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1164,8 +1231,16 @@ export type Database = {
         Args: { _actor: string; _target: string }
         Returns: boolean
       }
+      can_manage_payroll: {
+        Args: { _actor: string; _emp: string }
+        Returns: boolean
+      }
       can_view_employee: {
         Args: { _employee: string; _viewer: string }
+        Returns: boolean
+      }
+      can_view_payroll: {
+        Args: { _actor: string; _emp: string }
         Returns: boolean
       }
       check_in: {
@@ -1230,9 +1305,33 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      compute_payroll: { Args: { _emp: string; _month: string }; Returns: Json }
       distance_meters: {
         Args: { lat1: number; lat2: number; lon1: number; lon2: number }
         Returns: number
+      }
+      generate_payroll: {
+        Args: { _emp: string; _month: string }
+        Returns: {
+          breakdown: Json
+          employee_id: string
+          finalized_at: string | null
+          finalized_by: string | null
+          generated_at: string
+          generated_by: string | null
+          gross_salary: number
+          id: string
+          month: string
+          net_salary: number
+          status: string
+          total_deductions: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "payroll_records"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       has_permission: {
         Args: { _action?: string; _module: string; _user: string }
@@ -1247,6 +1346,10 @@ export type Database = {
       }
       in_company: {
         Args: { _company: string; _user: string }
+        Returns: boolean
+      }
+      in_company_scope: {
+        Args: { _actor: string; _emp: string }
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
@@ -1282,6 +1385,29 @@ export type Database = {
           can_view: boolean
           module: string
         }[]
+      }
+      set_payroll_status: {
+        Args: { _id: string; _status: string }
+        Returns: {
+          breakdown: Json
+          employee_id: string
+          finalized_at: string | null
+          finalized_by: string | null
+          generated_at: string
+          generated_by: string | null
+          gross_salary: number
+          id: string
+          month: string
+          net_salary: number
+          status: string
+          total_deductions: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "payroll_records"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       shares_company: { Args: { _a: string; _b: string }; Returns: boolean }
       working_day_count: {
