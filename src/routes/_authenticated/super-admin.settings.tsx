@@ -52,7 +52,7 @@ function SettingsPage() {
           {section === "payroll" && (
             <>
               <PayrollRulesForm />
-              <p className="text-sm text-muted-foreground">Set each person's salary and bank details from Staff → Edit. Monthly payroll runs come in a later phase.</p>
+              <p className="text-sm text-muted-foreground">Set each person's salary and bank details from Staff → Edit. Monthly salary calculations are on the Payroll page.</p>
             </>
           )}
           {section === "attendance" && <AttendanceSection />}
