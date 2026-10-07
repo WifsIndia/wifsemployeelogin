@@ -6,6 +6,7 @@ const schema = z.object({
   email: z.string().trim().email().max(255),
   password: z.string().min(8).max(72),
   full_name: z.string().trim().min(1).max(120),
+  username: z.string().trim().toLowerCase().regex(/^[a-z0-9._-]{3,30}$/, "Username must be 3–30 letters, numbers, dots, dashes or underscores."),
   role: z.enum(["admin", "hr", "manager", "employee", "ado", "agent"]),
 });
 
@@ -19,6 +20,8 @@ export const createEmployee = createServerFn({ method: "POST" })
     if (data.role === "admin" && !isAdmin) throw new Error("Only Admin can create another admin.");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: taken } = await supabaseAdmin.from("profiles").select("id").eq("username", data.username).maybeSingle();
+    if (taken) throw new Error("That username is already taken.");
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
       password: data.password,
@@ -27,7 +30,7 @@ export const createEmployee = createServerFn({ method: "POST" })
     });
     if (error || !created.user) throw new Error(error?.message ?? "Could not create user.");
     const uid = created.user.id;
-    await supabaseAdmin.from("profiles").update({ full_name: data.full_name, email: data.email }).eq("id", uid);
+    await supabaseAdmin.from("profiles").update({ full_name: data.full_name, email: data.email, username: data.username }).eq("id", uid);
     await supabaseAdmin.from("user_roles").delete().eq("user_id", uid);
     await supabaseAdmin.from("user_roles").insert({ user_id: uid, role: data.role });
     await supabaseAdmin.from("audit_logs").insert({
@@ -35,7 +38,7 @@ export const createEmployee = createServerFn({ method: "POST" })
       action: "employee_created",
       entity: "profiles",
       entity_id: uid,
-      details: { email: data.email, role: data.role },
+      details: { email: data.email, username: data.username, role: data.role },
     });
     return { id: uid };
   });

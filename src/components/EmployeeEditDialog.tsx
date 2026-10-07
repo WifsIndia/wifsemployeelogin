@@ -14,7 +14,7 @@ export const ASSIGNABLE_ROLES: AppRole[] = ["employee", "agent", "ado", "manager
 export const ROLE_ORDER: AppRole[] = ["super_admin", "admin", "hr", "manager", "ado", "agent", "employee"];
 
 export type EmpRow = {
-  id: string; full_name: string; email: string; phone: string | null; employee_code: string | null;
+  id: string; full_name: string; email: string; username?: string | null; phone: string | null; employee_code: string | null;
   designation: string | null; department_id: string | null; manager_id: string | null;
   joining_date: string | null; status: "active" | "inactive"; location_id?: string | null;
   employment_type?: string; leave_policy_id?: string | null; role: AppRole;
@@ -75,10 +75,16 @@ export function EmployeeEditDialog({ row, people, onClose, onSaved }: {
         designation: f.designation || null, department_id: f.department_id || null, manager_id: f.manager_id || null,
         joining_date: f.joining_date || null, status: f.status,
       };
+      const uname = (f.username ?? "").trim().toLowerCase();
+      if (uname !== (row.username ?? "")) {
+        if (!uname && row.username) throw new Error("Username cannot be removed once set.");
+        if (uname && !/^[a-z0-9._-]{3,30}$/.test(uname)) throw new Error("Username must be 3–30 letters, numbers, dots, dashes or underscores.");
+        if (uname) upd.username = uname;
+      }
       if (isSuper) { upd.location_id = f.location_id || null; upd.employment_type = f.employment_type || "full_time"; }
       if (canPolicy && (f.leave_policy_id ?? null) !== (row.leave_policy_id ?? null)) upd.leave_policy_id = f.leave_policy_id || null;
       const { error } = await supabase.from("profiles").update(upd).eq("id", row.id);
-      if (error) throw new Error(error.message.includes("NOT_ALLOWED_LEAVE_POLICY") ? "You don't have permission to assign this employee's leave policy." : "Could not save employee details.");
+      if (error) throw new Error(error.code === "23505" ? "That username is already taken." : error.message.includes("NOT_ALLOWED_LEAVE_POLICY") ? "You don't have permission to assign this employee's leave policy." : "Could not save employee details.");
 
       if (canRole && f.role !== row.role) {
         await supabase.from("user_roles").delete().eq("user_id", row.id).neq("role", "super_admin");
@@ -128,6 +134,8 @@ export function EmployeeEditDialog({ row, people, onClose, onSaved }: {
         <DialogHeader><DialogTitle>Edit employee</DialogTitle></DialogHeader>
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Full name" className="sm:col-span-2"><Input value={f.full_name} onChange={(e) => setF({ ...f, full_name: e.target.value })} /></Field>
+          <Field label="Username"><Input autoCapitalize="none" value={f.username ?? ""} onChange={(e) => setF({ ...f, username: e.target.value.toLowerCase() })} placeholder="Used to sign in" /></Field>
+          <Field label="Email"><Input value={f.email} disabled /></Field>
           <Field label="Employee ID"><Input value={f.employee_code ?? ""} onChange={(e) => setF({ ...f, employee_code: e.target.value })} /></Field>
           <Field label="Phone"><Input value={f.phone ?? ""} onChange={(e) => setF({ ...f, phone: e.target.value })} /></Field>
           <Field label="Designation"><Input value={f.designation ?? ""} onChange={(e) => setF({ ...f, designation: e.target.value })} /></Field>
