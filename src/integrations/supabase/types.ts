@@ -327,6 +327,7 @@ export type Database = {
         Row: {
           company_id: string | null
           created_at: string
+          employee_id: string | null
           file_path: string
           folder_id: string | null
           id: string
@@ -339,6 +340,7 @@ export type Database = {
         Insert: {
           company_id?: string | null
           created_at?: string
+          employee_id?: string | null
           file_path: string
           folder_id?: string | null
           id?: string
@@ -351,6 +353,7 @@ export type Database = {
         Update: {
           company_id?: string | null
           created_at?: string
+          employee_id?: string | null
           file_path?: string
           folder_id?: string | null
           id?: string
@@ -366,6 +369,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -1393,6 +1403,10 @@ export type Database = {
       }
       can_assign_leave_policy: {
         Args: { _actor: string; _target: string }
+        Returns: boolean
+      }
+      can_manage_employee_docs: {
+        Args: { _actor: string; _emp: string }
         Returns: boolean
       }
       can_manage_leave_policies: { Args: { _actor: string }; Returns: boolean }

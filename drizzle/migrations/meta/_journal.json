@@ -127,6 +127,13 @@
       "when": 1791376652345,
       "tag": "0017_manager_leave_review_direct",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791395304183,
+      "tag": "0018_migration",
+      "breakpoints": true
     }
   ]
 }
