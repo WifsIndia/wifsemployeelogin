@@ -6,6 +6,7 @@ import { Plus, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth";
+import { usePermission } from "@/lib/permissions";
 import { pageHead } from "@/lib/meta";
 import { formatDate } from "@/lib/format";
 import { Empty, Loading, PageHeader, StatusPill } from "@/components/AppShell";
@@ -25,9 +26,10 @@ export const Route = createFileRoute("/_authenticated/tasks")({
 
 type TaskStatus = Database["public"]["Enums"]["task_status"];
 type TaskPriority = Database["public"]["Enums"]["task_priority"];
-const STATUSES: TaskStatus[] = ["NOT_STARTED", "IN_PROGRESS", "ON_HOLD", "COMPLETED"];
+const STATUSES: TaskStatus[] = ["NOT_STARTED", "IN_PROGRESS", "ON_HOLD", "COMPLETED", "CANCELLED"];
 const PRIORITIES: TaskPriority[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
-const label = (s: string) => s.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
+const label = (s: string) =>
+  s === "NOT_STARTED" ? "Pending" : s.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
 
 interface TaskRow {
   id: string;
@@ -47,7 +49,8 @@ interface TaskRow {
 
 function TasksPage() {
   const { user, hasRole } = useAuth();
-  const canManage = hasRole("admin", "manager", "ado");
+  const perm = usePermission("tasks");
+  const canManage = hasRole("admin", "manager", "ado") && perm.create;
   const [filter, setFilter] = useState<"ALL" | TaskStatus>("ALL");
   const [mineOnly, setMineOnly] = useState(!canManage);
   const [editing, setEditing] = useState<TaskRow | "new" | null>(null);
@@ -299,7 +302,8 @@ function TaskForm({ task, onClose }: { task: TaskRow | null; onClose: () => void
 }
 
 function TaskDetail({ task, onClose, onEdit }: { task: TaskRow; onClose: () => void; onEdit?: () => void }) {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
+  const perm = usePermission("tasks");
   const qc = useQueryClient();
   const [progress, setProgress] = useState(task.progress);
   const [status, setStatus] = useState<TaskStatus>(task.status);
@@ -335,6 +339,28 @@ function TaskDetail({ task, onClose, onEdit }: { task: TaskRow; onClose: () => v
     if (error) return toast.error("Could not add comment.");
     setComment("");
     comments.refetch();
+  };
+
+  const history = useQuery({
+    queryKey: ["task-history", task.id],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("task_history")
+          .select("id, change, created_at, actor:profiles!task_history_actor_id_fkey(full_name)")
+          .eq("task_id", task.id)
+          .order("created_at", { ascending: false })
+      ).data ?? [],
+  });
+
+  const canDelete = perm.delete && hasRole("admin", "manager") && task.assignee_id !== user?.id;
+  const remove = async () => {
+    if (!window.confirm(`Delete task "${task.title}"? This cannot be undone.`)) return;
+    const { error } = await supabase.from("tasks").delete().eq("id", task.id);
+    if (error) return toast.error("You are not allowed to delete this task.");
+    toast.success("Task deleted");
+    qc.invalidateQueries({ queryKey: ["tasks"] });
+    onClose();
   };
 
   return (
@@ -399,12 +425,30 @@ function TaskDetail({ task, onClose, onEdit }: { task: TaskRow; onClose: () => v
               </Button>
             </div>
           </div>
+          <div>
+            <p className="mb-2 font-semibold">History</p>
+            <ul className="space-y-1 text-xs text-muted-foreground">
+              {(history.data ?? []).map((h) => (
+                <li key={h.id}>
+                  {formatDate(h.created_at)} · {(h.actor as { full_name: string } | null)?.full_name ?? "System"} — {h.change}
+                </li>
+              ))}
+              {history.data?.length === 0 && <li>No history recorded yet.</li>}
+            </ul>
+          </div>
         </div>
-        {onEdit && (
+        {(onEdit || canDelete) && (
           <DialogFooter>
-            <Button variant="outline" onClick={onEdit}>
-              Edit task
-            </Button>
+            {canDelete && (
+              <Button variant="destructive" onClick={remove}>
+                Delete task
+              </Button>
+            )}
+            {onEdit && (
+              <Button variant="outline" onClick={onEdit}>
+                Edit task
+              </Button>
+            )}
           </DialogFooter>
         )}
       </DialogContent>
