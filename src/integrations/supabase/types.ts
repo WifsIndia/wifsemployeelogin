@@ -265,9 +265,12 @@ export type Database = {
           allowances: number
           bank_name: string | null
           basic_salary: number
+          bond: string | null
           deductions: number
           employee_id: string
+          employment_description: string | null
           ifsc: string | null
+          paid_leave_allowance: number | null
           payment_mode: string
           updated_at: string
           upi_id: string | null
@@ -278,9 +281,12 @@ export type Database = {
           allowances?: number
           bank_name?: string | null
           basic_salary?: number
+          bond?: string | null
           deductions?: number
           employee_id: string
+          employment_description?: string | null
           ifsc?: string | null
+          paid_leave_allowance?: number | null
           payment_mode?: string
           updated_at?: string
           upi_id?: string | null
@@ -291,9 +297,12 @@ export type Database = {
           allowances?: number
           bank_name?: string | null
           basic_salary?: number
+          bond?: string | null
           deductions?: number
           employee_id?: string
+          employment_description?: string | null
           ifsc?: string | null
+          paid_leave_allowance?: number | null
           payment_mode?: string
           updated_at?: string
           upi_id?: string | null
