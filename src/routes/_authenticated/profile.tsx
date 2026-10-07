@@ -33,6 +33,13 @@ function Page() {
     queryFn: async () => (await supabase.from("departments").select("name").eq("id", profile!.department_id!).maybeSingle()).data,
   });
 
+  const manager = useQuery({
+    queryKey: ["my-manager", profile?.manager_id],
+    enabled: !!profile?.manager_id,
+    queryFn: async () =>
+      (await supabase.from("profiles").select("full_name, designation").eq("id", profile!.manager_id!).maybeSingle()).data,
+  });
+
   const extra = useQuery({
     queryKey: ["my-assignments", profile?.id],
     enabled: !!profile?.id,
