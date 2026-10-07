@@ -205,15 +205,14 @@ function SystemStats() {
   const q = useQuery({
     queryKey: ["system-stats", month],
     queryFn: async () => {
-      const c = (t: "profiles" | "companies" | "office_locations" | "leave_policy_sets" | "documents") =>
-        supabase.from(t).select("id", { count: "exact", head: true });
+      const h = { count: "exact" as const, head: true };
       const [emp, inactive, comp, loc, pol, docs, pay] = await Promise.all([
-        c("profiles").eq("status", "active"),
-        c("profiles").eq("status", "inactive"),
-        c("companies").eq("active", true),
-        c("office_locations").eq("active", true),
-        c("leave_policy_sets").eq("active", true),
-        c("documents"),
+        supabase.from("profiles").select("id", h).eq("status", "active"),
+        supabase.from("profiles").select("id", h).eq("status", "inactive"),
+        supabase.from("companies").select("id", h).eq("active", true),
+        supabase.from("office_locations").select("id", h).eq("active", true),
+        supabase.from("leave_policy_sets").select("id", h).eq("active", true),
+        supabase.from("documents").select("id", h),
         supabase.from("payroll_records").select("status").eq("month", month),
       ]);
       const p = pay.data ?? [];
