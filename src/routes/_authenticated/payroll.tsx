@@ -93,7 +93,7 @@ function Page() {
           {canEdit && (
             <div className="flex min-w-0 flex-wrap items-end gap-2 md:col-span-2 xl:col-span-1">
               <Button onClick={generate} disabled={busy || !emp || rec?.status === "finalized"}>{rec ? "Recalculate" : "Calculate"}</Button>
-              {rec?.status === "draft" && <Button variant="secondary" onClick={() => { if (window.confirm("Finalize this payroll? It can't be recalculated unless a Super Admin reopens it.")) setStatus("finalized"); }}>Finalize</Button>}
+              {rec?.status === "draft" && <Button variant="secondary" onClick={() => (window.confirm("Finalize this payroll? It can't be recalculated unless a Super Admin reopens it.") ? setStatus("finalized") : undefined)}>Finalize</Button>}
               {rec?.status === "finalized" && isSuper && <Button variant="outline" onClick={() => setStatus("draft")}>Reopen</Button>}
             </div>
           )}
