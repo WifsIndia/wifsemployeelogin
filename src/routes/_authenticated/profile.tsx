@@ -33,6 +33,13 @@ function Page() {
     queryFn: async () => (await supabase.from("departments").select("name").eq("id", profile!.department_id!).maybeSingle()).data,
   });
 
+  const manager = useQuery({
+    queryKey: ["my-manager", profile?.manager_id],
+    enabled: !!profile?.manager_id,
+    queryFn: async () =>
+      (await supabase.from("profiles").select("full_name, designation").eq("id", profile!.manager_id!).maybeSingle()).data,
+  });
+
   const extra = useQuery({
     queryKey: ["my-assignments", profile?.id],
     enabled: !!profile?.id,
@@ -78,6 +85,7 @@ function Page() {
     ["Employee code", profile?.employee_code ?? "—"],
     ["Designation", profile?.designation ?? "—"],
     ["Department", dept.data?.name ?? "—"],
+    ["Reporting to", manager.data ? `${manager.data.full_name}${manager.data.designation ? ` (${manager.data.designation})` : ""}` : "—"],
     ["Joining date", profile?.joining_date ? formatDate(profile.joining_date) : "—"],
     ["Role", roles.join(", ") || "employee"],
     ["Leave policy", extra.data?.policy ?? "—"],
