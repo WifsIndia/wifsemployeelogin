@@ -139,6 +139,20 @@ export function AttendanceSection() {
           Every check-in/out is measured against these rules automatically: late minutes, early departure, hours worked and full/half day.
         </p>
       </Panel>
+      <Panel title="Marking & verification">
+        <div className="space-y-3">
+          <label className="flex items-center gap-3 text-sm">
+            <Switch checked={f.auto_mark_late} onCheckedChange={(v) => setF({ ...f, auto_mark_late: v })} /> Mark late arrival automatically (after start time + grace)
+          </label>
+          <label className="flex items-center gap-3 text-sm">
+            <Switch checked={f.auto_mark_early_departure} onCheckedChange={(v) => setF({ ...f, auto_mark_early_departure: v })} /> Mark early checkout automatically (before end time − grace)
+          </label>
+          <label className="flex items-center gap-3 text-sm">
+            <Switch checked={f.require_gps} onCheckedChange={(v) => setF({ ...f, require_gps: v })} /> Require GPS location check
+          </label>
+          <p className="text-xs text-muted-foreground">Even without GPS, staff can only mark attendance if they have an assigned office location. If GPS is sent, it must be inside one of their locations.</p>
+        </div>
+      </Panel>
       <Panel title="Overtime">
         <label className="flex items-center gap-3 text-sm">
           <Switch checked={f.overtime_enabled} onCheckedChange={(v) => setF({ ...f, overtime_enabled: v })} /> Track overtime

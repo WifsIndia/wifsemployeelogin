@@ -71,6 +71,13 @@
       "when": 1791372645063,
       "tag": "0009_employee_locations",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791372960171,
+      "tag": "0010_attendance_rules",
+      "breakpoints": true
     }
   ]
 }

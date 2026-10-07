@@ -64,25 +64,32 @@ export function AttendanceCard() {
     return () => clearInterval(t);
   }, []);
 
-  const configured = office?.latitude != null && office?.longitude != null;
+  const { data: rules } = useQuery({
+    queryKey: ["attendance-rules"],
+    queryFn: async () => (await supabase.from("organization_settings").select("require_gps").maybeSingle()).data,
+  });
+  const gpsRequired = rules?.require_gps ?? true;
+  const configured = !gpsRequired || (office?.latitude != null && office?.longitude != null);
 
   const act = async (kind: "in" | "out") => {
     setError(null);
     setBusy(kind);
     try {
-      const c = await getCurrentPosition();
+      let c: { latitude: number | null; longitude: number | null; accuracy: number | null };
+      try { c = await getCurrentPosition(); }
+      catch (err) { if (gpsRequired) throw err; c = { latitude: null, longitude: null, accuracy: null }; }
       let distance: number | null = null;
       let inside: boolean | null = null;
-      if (office?.latitude != null && office?.longitude != null) {
+      if (c.latitude != null && c.longitude != null && office?.latitude != null && office?.longitude != null) {
         distance = distanceMeters(c.latitude, c.longitude, office.latitude, office.longitude);
         inside = distance <= office.radius_meters;
       }
-      setLoc({ distance, accuracy: c.accuracy, inside });
+      if (c.accuracy != null) setLoc({ distance, accuracy: c.accuracy, inside });
       // The database performs the authoritative location, radius and accuracy checks.
       const { error: rpcError } = await supabase.rpc(kind === "in" ? "check_in" : "check_out", {
-        _lat: c.latitude,
-        _lon: c.longitude,
-        _accuracy: c.accuracy,
+        _lat: c.latitude as number,
+        _lon: c.longitude as number,
+        _accuracy: c.accuracy as number,
       });
       if (rpcError) throw new Error(rpcError.message);
       toast.success(kind === "in" ? "Checked in successfully" : "Checked out successfully");
