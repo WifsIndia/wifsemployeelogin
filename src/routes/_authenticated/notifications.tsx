@@ -1,3 +1,4 @@
+import { RequireModule } from "@/components/AppShell";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +11,7 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/notifications")({
   head: () => pageHead("Notifications", "Your task, leave and announcement notifications."),
-  component: Page,
+  component: () => <RequireModule module="notifications"><Page /></RequireModule>,
 });
 
 function Page() {

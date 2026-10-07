@@ -8,7 +8,7 @@ import { useAuth, type AppRole } from "@/lib/auth";
 import { pageHead } from "@/lib/meta";
 import { createEmployee } from "@/lib/employees.functions";
 import { EmployeeEditDialog } from "@/components/EmployeeEditDialog";
-import { Empty, Loading, PageHeader, RequireRole, StatusPill } from "@/components/AppShell";
+import { Empty, Loading, PageHeader, RequireModule, RequireRole, StatusPill } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,9 +18,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export const Route = createFileRoute("/_authenticated/admin/employees")({
   head: () => pageHead("Employees", "Manage WiFS employees, roles and reporting managers."),
   component: () => (
-    <RequireRole roles={["super_admin", "admin", "hr"]}>
+    <RequireRole roles={["super_admin", "admin", "hr"]}><RequireModule module="employees">
       <Page />
-    </RequireRole>
+    </RequireModule></RequireRole>
   ),
 });
 

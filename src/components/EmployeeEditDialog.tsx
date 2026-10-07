@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -33,9 +33,10 @@ export function EmployeeEditDialog({ row, people, onClose, onSaved }: {
   const [companies, setCompanies] = useState<string[]>([]);
   const [locIds, setLocIds] = useState<string[]>([]);
   const canLoc = isSuper || (isAdmin && !isSelf);
-  const canPolicy = isSuper || (hasRole("admin") && !isSelf);
+  const canPolicy = isSuper || (hasRole("admin", "hr") && !isSelf);
   const [comp, setComp] = useState({ basic_salary: 0, allowances: 0, deductions: 0, payment_mode: "bank", bank_name: "", account_holder: "", account_number: "", ifsc: "", upi_id: "", paid_leave_allowance: "", bond: "", employment_description: "" });
   const [saving, setSaving] = useState(false);
+  const qc = useQueryClient();
 
   const meta = useQuery({
     queryKey: ["emp-edit-meta", row.id],
@@ -83,8 +84,10 @@ export function EmployeeEditDialog({ row, people, onClose, onSaved }: {
       }
       if (isSuper) { upd.location_id = f.location_id || null; upd.employment_type = f.employment_type || "full_time"; }
       if (canPolicy && (f.leave_policy_id ?? null) !== (row.leave_policy_id ?? null)) upd.leave_policy_id = f.leave_policy_id || null;
-      const { error } = await supabase.from("profiles").update(upd).eq("id", row.id);
+      const { data: saved, error } = await supabase.from("profiles").update(upd).eq("id", row.id).select("id, leave_policy_id");
       if (error) throw new Error(error.code === "23505" ? "That username is already taken." : error.message.includes("NOT_ALLOWED_LEAVE_POLICY") ? "You don't have permission to assign this employee's leave policy." : "Could not save employee details.");
+      if (!saved?.length) throw new Error("You don't have permission to update this employee.");
+      if ("leave_policy_id" in upd && saved[0]!.leave_policy_id !== upd.leave_policy_id) throw new Error("The leave policy could not be saved.");
 
       if (canRole && f.role !== row.role) {
         await supabase.from("user_roles").delete().eq("user_id", row.id).neq("role", "super_admin");
@@ -118,6 +121,7 @@ export function EmployeeEditDialog({ row, people, onClose, onSaved }: {
         const r = await supabase.from("employee_compensation").upsert({ employee_id: row.id, ...comp, bank_name: comp.bank_name || null, account_holder: comp.account_holder || null, account_number: comp.account_number || null, ifsc: comp.ifsc || null, upi_id: comp.upi_id || null, paid_leave_allowance: comp.paid_leave_allowance === "" ? null : Number(comp.paid_leave_allowance), bond: comp.bond.trim() || null, employment_description: comp.employment_description.trim() || null });
         if (r.error) throw new Error("Could not save salary details.");
       }
+      for (const k of ["my-assignments", "leave-balances", "my-leave-policy", "people", "emp-edit-meta"]) qc.invalidateQueries({ queryKey: [k] });
       toast.success("Employee updated");
       onSaved();
     } catch (e) {

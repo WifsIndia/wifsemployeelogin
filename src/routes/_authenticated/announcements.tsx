@@ -1,3 +1,4 @@
+import { RequireModule } from "@/components/AppShell";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -14,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/_authenticated/announcements")({
   head: () => pageHead("Announcements", "Company announcements for WiFS employees."),
-  component: Page,
+  component: () => <RequireModule module="announcements"><Page /></RequireModule>,
 });
 
 function Page() {

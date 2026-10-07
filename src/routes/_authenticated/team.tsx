@@ -5,14 +5,14 @@ import { useAuth } from "@/lib/auth";
 import { pageHead } from "@/lib/meta";
 import { formatTime, todayISO } from "@/lib/format";
 import { useScopedPeople } from "@/components/TeamOverview";
-import { Empty, Loading, PageHeader, RequireRole, StatusPill } from "@/components/AppShell";
+import { Empty, Loading, PageHeader, RequireModule, RequireRole, StatusPill } from "@/components/AppShell";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/team")({
   head: () => pageHead("My Team", "Your team members, today's attendance and open tasks."),
   component: () => (
     <RequireRole roles={["manager", "ado", "admin", "hr"]}>
-      <TeamPage />
+      <RequireModule module="staff"><TeamPage /></RequireModule>
     </RequireRole>
   ),
 });

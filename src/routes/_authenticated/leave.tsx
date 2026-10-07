@@ -1,6 +1,7 @@
+import { RequireModule } from "@/components/AppShell";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 export const Route = createFileRoute("/_authenticated/leave")({
   head: () => pageHead("Leave", "Apply for leave and track or review leave requests."),
-  component: LeavePage,
+  component: () => <RequireModule module="leave"><LeavePage /></RequireModule>,
 });
 
 type LeaveType = Database["public"]["Enums"]["leave_type"];
@@ -42,6 +43,20 @@ function LeavePage() {
   const [f, setF] = useState({ leave_type: "CASUAL" as LeaveType, start_date: todayISO(), end_date: todayISO(), reason: "", half_day: false });
   const [saving, setSaving] = useState(false);
 
+  // Leave types come from the employee's assigned leave policy (same source as the balance panel).
+  const balances = useQuery({
+    queryKey: ["leave-balances", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => (await supabase.rpc("leave_balances", { _employee: user!.id })).data ?? [],
+  });
+  const typeOptions = balances.data?.length
+    ? balances.data.map((b) => ({ value: b.leave_type, label: b.label }))
+    : TYPES.map((t) => ({ value: t, label: t.charAt(0) + t.slice(1).toLowerCase() }));
+  useEffect(() => {
+    if (balances.data?.length && !balances.data.some((b) => b.leave_type === f.leave_type)) {
+      setF((x) => ({ ...x, leave_type: balances.data![0]!.leave_type }));
+    }
+  }, [balances.data, f.leave_type]);
   const mine = useQuery({
     queryKey: ["leave", "mine", user?.id],
     enabled: !!user,
@@ -117,9 +132,9 @@ function LeavePage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {TYPES.map((t) => (
-                      <SelectItem key={t} value={t}>
-                        {t.charAt(0) + t.slice(1).toLowerCase()}
+                    {typeOptions.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>
+                        {t.label}
                       </SelectItem>
                     ))}
                   </SelectContent>

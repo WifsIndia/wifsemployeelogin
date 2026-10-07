@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { pageHead } from "@/lib/meta";
 import { getCurrentPosition } from "@/lib/geo";
-import { Loading, PageHeader, RequireRole } from "@/components/AppShell";
+import { Loading, PageHeader, RequireModule, RequireRole } from "@/components/AppShell";
 import { Panel } from "@/components/TeamOverview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,9 +18,9 @@ const MapPicker = lazy(() => import("@/components/MapPicker"));
 export const Route = createFileRoute("/_authenticated/admin/settings/office-location")({
   head: () => pageHead("Office Location", "Configure the office location and attendance radius."),
   component: () => (
-    <RequireRole roles={["admin"]}>
+    <RequireRole roles={["admin"]}><RequireModule module="locations">
       <Page />
-    </RequireRole>
+    </RequireModule></RequireRole>
   ),
 });
 

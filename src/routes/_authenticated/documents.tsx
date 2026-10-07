@@ -1,3 +1,4 @@
+import { RequireModule } from "@/components/AppShell";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
@@ -16,7 +17,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 
 export const Route = createFileRoute("/_authenticated/documents")({
   head: () => pageHead("Documents", "Company policies and employee documents."),
-  component: Page,
+  component: () => <RequireModule module="documents"><Page /></RequireModule>,
 });
 
 interface FolderRow {

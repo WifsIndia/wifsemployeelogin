@@ -26,6 +26,7 @@ import { useAuth, type AppRole } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { usePermissions } from "@/lib/permissions";
 
 interface NavItem {
   to: string;
@@ -53,31 +54,39 @@ const I = {
   profile: { to: "/profile", label: "Profile", icon: UserRound },
 } satisfies Record<string, NavItem>;
 
-const NAV_BY_ROLE: Record<AppRole, NavItem[]> = {
-  agent: [I.dashboard, I.attendance, I.myTasks, I.work, I.leave, I.ann, I.notif, I.docs, I.profile],
-  ado: [I.dashboard, I.team, I.attendance, I.tasks, I.work, I.leave, I.ann, I.notif, I.docs, I.profile],
-  super_admin: [I.dashboard, I.org, I.employees, I.attendance, I.tasks, I.work, I.leave, I.ann, I.reports, I.notif, I.settings, I.docs, I.profile],
-  employee: [I.dashboard, I.attendance, I.myTasks, I.work, I.leave, I.ann, I.notif, I.docs, I.profile],
-  manager: [I.dashboard, I.team, I.attendance, I.tasks, I.work, I.leave, I.ann, I.notif, I.profile],
-  hr: [I.dashboard, I.employees, I.attendance, I.work, I.leave, I.ann, I.reports, I.notif, I.profile],
-  admin: [
-    I.dashboard,
-    I.employees,
-    I.attendance,
-    I.tasks,
-    I.work,
-    I.leave,
-    I.ann,
-    I.reports,
-    I.notif,
-    I.settings,
-    I.docs,
-    I.profile,
-  ],
-};
+type NavEntry = { item: NavItem; module: string | null; roles?: AppRole[] };
+
+// Order of the menu. Each entry is shown only when the user's role has View on its module
+// (Roles & Permissions); `roles` limits entries whose pages are tied to a role's place in the org.
+const NAV: NavEntry[] = [
+  { item: I.dashboard, module: null },
+  { item: I.org, module: "settings", roles: ["super_admin"] },
+  { item: I.team, module: "staff", roles: ["manager", "ado", "admin", "hr"] },
+  { item: I.employees, module: "employees", roles: ["super_admin", "admin", "hr"] },
+  { item: I.attendance, module: "attendance" },
+  { item: I.tasks, module: "tasks" },
+  { item: I.work, module: "work_logs" },
+  { item: I.leave, module: "leave" },
+  { item: I.ann, module: "announcements" },
+  { item: I.reports, module: "reports" },
+  { item: I.notif, module: "notifications" },
+  { item: I.payroll, module: "payroll" },
+  { item: I.settings, module: "locations", roles: ["super_admin", "admin"] },
+  { item: I.docs, module: "documents" },
+  { item: I.links, module: "useful_links" },
+  { item: I.profile, module: null },
+];
+
+/** Page gate: requires View on a module (Super Admin always passes). The database still enforces access. */
+export function RequireModule({ module, children }: { module: string; children: ReactNode }) {
+  const perms = usePermissions();
+  if (!perms.ready) return <Loading />;
+  if (!perms.get(module).view) return <AccessDenied />;
+  return <>{children}</>;
+}
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { profile, primaryRole, signOut, user } = useAuth();
+  const { profile, primaryRole, signOut, user, roles } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -103,28 +112,10 @@ export function AppShell({ children }: { children: ReactNode }) {
     navigate({ to: "/auth", replace: true });
   };
 
-  const { data: navPerms = { payroll: false, reports: false } } = useQuery({
-    queryKey: ["nav-perms", user?.id],
-    enabled: !!user?.id,
-    queryFn: async () => {
-      const { data } = await supabase.rpc("my_permissions");
-      const rows = data ?? [];
-      return {
-        payroll: rows.some((p) => p.module === "payroll" && p.can_view),
-        reports: rows.some((p) => p.module === "reports" && p.can_view),
-      };
-    },
-  });
-  const canPayroll = navPerms.payroll;
-  const roleBase = NAV_BY_ROLE[primaryRole];
-  // Managers/employees get Reports only when their role has Reports "View" (ADO/Agent unchanged).
-  const base =
-    navPerms.reports && (primaryRole === "manager" || primaryRole === "employee") && !roleBase.includes(I.reports)
-      ? [...roleBase.slice(0, -1), I.reports, roleBase[roleBase.length - 1]!]
-      : roleBase;
-  const showPayroll = canPayroll || primaryRole === "super_admin";
-  const withPay = showPayroll ? [...base.slice(0, -1), I.payroll, base[base.length - 1]!] : base;
-  const items = [...withPay.slice(0, -1), I.links, withPay[withPay.length - 1]!];
+  const perms = usePermissions();
+  const items = NAV.filter((e) => (!e.roles || e.roles.some((r) => roles.includes(r))) && (!e.module || perms.get(e.module).view))
+    .map((e) => (e.item === I.tasks && (primaryRole === "employee" || primaryRole === "agent") ? I.myTasks : e.item));
+  const showNotif = perms.get("notifications").view;
 
   const sidebar = (
     <div className="flex h-full w-64 max-w-[calc(100vw-3rem)] flex-col bg-sidebar text-sidebar-foreground">
@@ -187,14 +178,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="min-w-0 flex-1">
             <p className="truncate font-display text-base font-semibold">WiFS Employee Portal</p>
           </div>
-          <Link to="/notifications" className="relative shrink-0 rounded-md p-2 hover:bg-muted" aria-label="Notifications">
+          {showNotif && <Link to="/notifications" className="relative shrink-0 rounded-md p-2 hover:bg-muted" aria-label="Notifications">
             <Bell className="size-5" />
             {unread > 0 && (
               <span className="absolute -right-0.5 -top-0.5 flex size-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
                 {unread}
               </span>
             )}
-          </Link>
+          </Link>}
         </header>
         <main className="portal-content min-w-0 flex-1 px-4 py-5 sm:py-6 lg:px-8">{children}</main>
       </div>
