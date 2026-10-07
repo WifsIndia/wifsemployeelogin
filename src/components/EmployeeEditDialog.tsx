@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { useAuth, type AppRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,7 +64,7 @@ export function EmployeeEditDialog({ row, people, onClose, onSaved }: {
   const save = async () => {
     setSaving(true);
     try {
-      const upd: Record<string, unknown> = {
+      const upd: Database["public"]["Tables"]["profiles"]["Update"] = {
         full_name: f.full_name.trim(), phone: f.phone || null, employee_code: f.employee_code || null,
         designation: f.designation || null, department_id: f.department_id || null, manager_id: f.manager_id || null,
         joining_date: f.joining_date || null, status: f.status,
