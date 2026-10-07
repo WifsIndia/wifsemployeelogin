@@ -240,9 +240,24 @@ function Balances({ userId }: { userId: string }) {
     queryKey: ["leave-balances", userId],
     queryFn: async () => (await supabase.rpc("leave_balances", { _employee: userId })).data ?? [],
   });
+  const policy = useQuery({
+    queryKey: ["my-leave-policy", userId],
+    queryFn: async () => {
+      const { data: p } = await supabase.from("profiles").select("leave_policy_id").eq("id", userId).maybeSingle();
+      if (!p?.leave_policy_id) return null;
+      return (await supabase.from("leave_policy_sets").select("name, working_days").eq("id", p.leave_policy_id).maybeSingle()).data;
+    },
+  });
   if (!q.data?.length) return null;
+  const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   return (
     <Panel title="My leave balance">
+      {policy.data && (
+        <p className="mb-3 text-sm text-muted-foreground">
+          Leave policy: <b className="text-foreground">{policy.data.name}</b> · Working days:{" "}
+          {(policy.data.working_days ?? []).map((d: number) => DAYS[d % 7]).join(", ") || "—"}
+        </p>
+      )}
       <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {q.data.map((b) => (
           <div key={b.leave_type} className="rounded-lg border border-border p-3">
