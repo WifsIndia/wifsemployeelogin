@@ -34,7 +34,7 @@ function WorkLogPage() {
       (
         await supabase
           .from("daily_work_logs")
-          .select("*")
+          .select("*, task:tasks(title)")
           .eq("employee_id", user!.id)
           .order("log_date", { ascending: false })
           .limit(60)
@@ -48,7 +48,7 @@ function WorkLogPage() {
       (
         await supabase
           .from("daily_work_logs")
-          .select("*, employee:profiles!daily_work_logs_employee_id_fkey(full_name)")
+          .select("*, task:tasks(title), employee:profiles!daily_work_logs_employee_id_fkey(full_name)")
           .neq("employee_id", user!.id)
           .gte("log_date", from)
           .order("log_date", { ascending: false })
@@ -207,6 +207,8 @@ interface Log {
   hours_worked: number | null;
   notes: string | null;
   employee?: { full_name: string } | null;
+  status?: string | null;
+  task?: { title: string } | null;
 }
 
 function LogList({ logs, showName }: { logs: Log[]; showName?: boolean }) {
@@ -226,6 +228,13 @@ function LogList({ logs, showName }: { logs: Log[]; showName?: boolean }) {
             </p>
           </div>
           {l.work_completed && <p className="mt-1 whitespace-pre-wrap text-muted-foreground">{l.work_completed}</p>}
+          {(l.task || l.status) && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {l.task && `Task: ${l.task.title}`}
+              {l.task && l.status && " · "}
+              {l.status && l.status.replace("_", " ").toLowerCase()}
+            </p>
+          )}
           {l.notes && <p className="mt-1 text-xs italic text-muted-foreground">{l.notes}</p>}
         </li>
       ))}
