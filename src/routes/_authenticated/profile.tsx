@@ -85,6 +85,7 @@ function Page() {
     ["Employee code", profile?.employee_code ?? "—"],
     ["Designation", profile?.designation ?? "—"],
     ["Department", dept.data?.name ?? "—"],
+    ["Reporting to", manager.data ? `${manager.data.full_name}${manager.data.designation ? ` (${manager.data.designation})` : ""}` : "—"],
     ["Joining date", profile?.joining_date ? formatDate(profile.joining_date) : "—"],
     ["Role", roles.join(", ") || "employee"],
     ["Leave policy", extra.data?.policy ?? "—"],
