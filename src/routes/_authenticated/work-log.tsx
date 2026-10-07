@@ -56,21 +56,43 @@ function WorkLogPage() {
       ).data ?? [],
   });
 
-  const todayLog = mine.data?.find((l) => l.log_date === today);
-  const [f, setF] = useState({ summary: "", work_completed: "", hours_worked: "", notes: "" });
+  const [logDate, setLogDate] = useState(today);
+  const todayLog = mine.data?.find((l) => l.log_date === logDate);
+  const myTasks = useQuery({
+    queryKey: ["work-log-tasks", user?.id],
+    enabled: !!user,
+    queryFn: async () =>
+      (
+        await supabase
+          .from("tasks")
+          .select("id, title, status")
+          .eq("assignee_id", user!.id)
+          .order("created_at", { ascending: false })
+          .limit(100)
+      ).data ?? [],
+  });
+  const empty = { summary: "", work_completed: "", hours_worked: "", notes: "", task_id: "", status: "" };
+  const [f, setF] = useState(empty);
   useEffect(() => {
-    if (todayLog)
-      setF({
-        summary: todayLog.summary,
-        work_completed: todayLog.work_completed ?? "",
-        hours_worked: todayLog.hours_worked?.toString() ?? "",
-        notes: todayLog.notes ?? "",
-      });
-  }, [todayLog]);
+    setF(
+      todayLog
+        ? {
+            summary: todayLog.summary,
+            work_completed: todayLog.work_completed ?? "",
+            hours_worked: todayLog.hours_worked?.toString() ?? "",
+            notes: todayLog.notes ?? "",
+            task_id: todayLog.task_id ?? "",
+            status: todayLog.status ?? "",
+          }
+        : empty,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [todayLog, logDate]);
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
     if (!f.summary.trim()) return toast.error("Please enter a summary.");
+    if (logDate > today) return toast.error("You cannot log work for a future date.");
     const hours = f.hours_worked ? Number(f.hours_worked) : null;
     if (hours != null && (isNaN(hours) || hours < 0 || hours > 24)) return toast.error("Hours must be between 0 and 24.");
     setSaving(true);
@@ -79,10 +101,12 @@ function WorkLogPage() {
       work_completed: f.work_completed || null,
       hours_worked: hours,
       notes: f.notes || null,
+      task_id: f.task_id || null,
+      status: f.status || null,
     };
     const { error } = todayLog
       ? await supabase.from("daily_work_logs").update(payload).eq("id", todayLog.id)
-      : await supabase.from("daily_work_logs").insert({ ...payload, employee_id: user!.id, log_date: today });
+      : await supabase.from("daily_work_logs").insert({ ...payload, employee_id: user!.id, log_date: logDate });
     setSaving(false);
     if (error) return toast.error("Could not save your work log.");
     toast.success("Work log saved");
