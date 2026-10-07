@@ -151,7 +151,7 @@ export function TeamOverview({
           ) : (
             <ul className="divide-y divide-border text-sm">
               {s.leave.slice(0, 6).map((l) => (
-                <li key={l.id} className="flex justify-between gap-2 py-2">
+                <li key={l.id} className="grid min-w-0 gap-1 py-2 sm:grid-cols-2 sm:gap-2">
                   <span className="font-medium">{nameOf(l.employee_id)}</span>
                   <span className="text-muted-foreground">
                     {l.leave_type.toLowerCase()} · {formatDate(l.start_date)} – {formatDate(l.end_date)}
@@ -168,7 +168,7 @@ export function TeamOverview({
             <ul className="divide-y divide-border text-sm">
               {s.logs.map((l) => (
                 <li key={l.id} className="py-2">
-                  <p className="flex justify-between">
+                  <p className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
                     <span className="font-medium">{nameOf(l.employee_id)}</span>
                     <span className="text-xs text-muted-foreground">{formatDate(l.log_date)}</span>
                   </p>
@@ -185,7 +185,7 @@ export function TeamOverview({
             ) : (
               <ul className="divide-y divide-border text-sm">
                 {s.att.slice(0, 8).map((a) => (
-                  <li key={a.employee_id} className="flex justify-between py-2">
+                  <li key={a.employee_id} className="grid min-w-0 gap-1 py-2 sm:grid-cols-2 sm:gap-2">
                     <span>{nameOf(a.employee_id)}</span>
                     <span className="text-muted-foreground">checked in {formatTime(a.check_in_time)}</span>
                   </li>
@@ -201,10 +201,10 @@ export function TeamOverview({
 
 export function Panel({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h3 className="font-display text-base font-semibold">{title}</h3>
-        {action}
+    <div className="min-w-0 rounded-xl border border-border bg-card p-4 sm:p-5">
+      <div className="mb-3 grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+        <h3 className="min-w-0 break-words font-display text-base font-semibold">{title}</h3>
+        {action && <div className="flex min-w-0 flex-wrap items-center gap-2 [&>input]:max-w-full">{action}</div>}
       </div>
       {children}
     </div>

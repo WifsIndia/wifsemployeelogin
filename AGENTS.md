@@ -11,3 +11,4 @@
 - Employee org assignment (role, supervisor/ADO via manager_id, companies, salary) is edited only through src/components/EmployeeEditDialog.tsx — one editor for Employees page and Super Admin Staff settings.
 - Company-owned items (documents, folders) use `company_id` null = all staff, checked via `public.can_access_company`; files live in the private `documents` bucket and are readable only when a visible `documents` row points at them — keeps storage access identical to table RLS.
 - Task changes are recorded by the `tasks_history` trigger into `task_history`; never write history from the client — keeps history tamper-proof.
+- Responsive sizing for tables and dialogs belongs in the existing shared UI components; page layouts use shrinking grid tracks and local scroll regions to prevent viewport overflow without duplicating views.

@@ -27,7 +27,7 @@ const REPORTS: { key: ReportKey; label: string; module: string; statuses: string
   { key: "work", label: "Daily work", module: "work_logs", statuses: ["IN_PROGRESS", "COMPLETED", "BLOCKED"] },
 ];
 
-const sel = "h-9 rounded-md border border-input bg-background px-2 text-sm";
+const sel = "h-11 w-full min-w-0 rounded-md border border-input bg-background px-2 text-base sm:h-9 md:text-sm";
 type Row = Record<string, string | number>;
 
 function Page() {
@@ -186,7 +186,7 @@ function Page() {
         ))}
       </div>
 
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="grid min-w-0 items-end gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 [&>div]:min-w-0">
         {people.length > 1 && (
           <div className="flex flex-col gap-1"><Label>Employee</Label>
             <select className={sel} value={emp} onChange={(e) => setEmp(e.target.value)}>
@@ -237,7 +237,7 @@ function Page() {
               <StatCard label="Hours logged" value={rows.reduce((s, r) => s + Number(r["Hours"] || 0), 0).toFixed(1)} />
             )}
           </div>
-          <div className="overflow-x-auto rounded-xl border border-border bg-card">
+          <div className="max-w-full overflow-x-auto overscroll-x-contain rounded-xl border border-border bg-card" tabIndex={0} role="region" aria-label="Report table">
             {rows.length === 0 ? <Empty>No records for these filters.</Empty> : (
               <table className="w-full text-sm">
                 <thead className="bg-muted text-left text-xs uppercase text-muted-foreground">
@@ -247,7 +247,7 @@ function Page() {
                   {rows.slice(0, 200).map((r, i) => (
                     <tr key={i}>
                       {cols.map((c) => (
-                        <td key={c} className="p-3 align-top">
+                        <td key={c} className="min-w-28 max-w-sm break-words p-3 align-top">
                           {/^\d{4}-\d{2}-\d{2}$/.test(String(r[c])) ? formatDate(String(r[c])) : String(r[c] ?? "")}
                         </td>
                       ))}

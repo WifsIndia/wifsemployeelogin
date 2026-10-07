@@ -124,15 +124,18 @@ export function AppShell({ children }: { children: ReactNode }) {
   const items = showPayroll ? [...base.slice(0, -1), I.payroll, base[base.length - 1]!] : base;
 
   const sidebar = (
-    <div className="flex h-full w-64 flex-col bg-sidebar text-sidebar-foreground">
-      <div className="flex items-center gap-3 border-b border-sidebar-border px-5 py-5">
+    <div className="flex h-full w-64 max-w-[calc(100vw-3rem)] flex-col bg-sidebar text-sidebar-foreground">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-sidebar-border px-5 py-5">
+        <div className="flex min-w-0 items-center gap-3">
         <div className="flex size-10 items-center justify-center rounded-lg bg-sidebar-primary font-display text-lg font-bold text-sidebar-primary-foreground">
           W
         </div>
-        <div>
+        <div className="min-w-0">
           <p className="font-display text-sm font-bold tracking-wide">WiFS INDIA</p>
           <p className="text-xs text-sidebar-foreground/70">Employee Portal</p>
         </div>
+        </div>
+        <Button variant="ghost" size="icon" className="shrink-0 text-sidebar-foreground lg:hidden" onClick={() => setOpen(false)} aria-label="Close navigation"><X className="size-5" /></Button>
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {items.map((item) => (
@@ -148,12 +151,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="border-t border-sidebar-border p-4">
         <p className="truncate text-sm font-medium">{profile?.full_name || "Employee"}</p>
         <p className="mb-3 text-xs uppercase tracking-wide text-sidebar-primary">{primaryRole.replace("_", " ")}</p>
-        <button
+        <Button variant="ghost"
           onClick={handleSignOut}
           className="flex w-full items-center gap-2 rounded-md bg-sidebar-accent px-3 py-2 text-sm text-sidebar-accent-foreground transition-colors hover:opacity-90"
         >
           <LogOut className="size-4" /> Logout
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -162,17 +165,17 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen bg-background">
       <aside className="sticky top-0 hidden h-screen lg:block">{sidebar}</aside>
       {open && (
-        <div className="fixed inset-0 z-50 flex lg:hidden">
+        <div className="fixed inset-0 z-50 flex h-dvh lg:hidden">
           <div className="absolute inset-0 bg-foreground/50" onClick={() => setOpen(false)} />
           <div className="relative z-10">{sidebar}</div>
         </div>
       )}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-card px-4 py-3 lg:px-8">
+        <header className="sticky top-0 z-30 flex min-w-0 items-center gap-2 border-b border-border bg-card px-4 py-3 sm:gap-3 lg:px-8">
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden"
+            className="shrink-0 lg:hidden"
             onClick={() => setOpen((v) => !v)}
             aria-label="Toggle navigation"
           >
@@ -181,7 +184,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="min-w-0 flex-1">
             <p className="truncate font-display text-base font-semibold">WiFS Employee Portal</p>
           </div>
-          <Link to="/notifications" className="relative rounded-md p-2 hover:bg-muted" aria-label="Notifications">
+          <Link to="/notifications" className="relative shrink-0 rounded-md p-2 hover:bg-muted" aria-label="Notifications">
             <Bell className="size-5" />
             {unread > 0 && (
               <span className="absolute -right-0.5 -top-0.5 flex size-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
@@ -190,7 +193,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             )}
           </Link>
         </header>
-        <main className="flex-1 px-4 py-6 lg:px-8">{children}</main>
+        <main className="portal-content min-w-0 flex-1 px-4 py-5 sm:py-6 lg:px-8">{children}</main>
       </div>
     </div>
   );
@@ -237,12 +240,12 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h1 className="font-display text-2xl font-bold tracking-tight">{title}</h1>
+    <div className="mb-6 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+      <div className="min-w-0">
+        <h1 className="break-words font-display text-2xl font-bold">{title}</h1>
         {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
       </div>
-      {action}
+      {action && <div className="flex min-w-0 flex-wrap items-center gap-2 [&>button]:max-w-full">{action}</div>}
     </div>
   );
 }
@@ -271,14 +274,15 @@ export function RequireRole({ roles, children }: { roles: AppRole[]; children: R
 
 export function Loading() {
   return (
-    <div className="flex items-center justify-center py-12 text-muted-foreground">
+    <div className="flex items-center justify-center py-12 text-muted-foreground" role="status" aria-label="Loading">
       <Loader2 className="size-5 animate-spin" />
+      <span className="sr-only">Loading</span>
     </div>
   );
 }
 
 export function Empty({ children }: { children: ReactNode }) {
-  return <p className="py-8 text-center text-sm text-muted-foreground">{children}</p>;
+  return <p className="break-words px-4 py-8 text-center text-sm text-muted-foreground" role="status">{children}</p>;
 }
 
 export function StatCard({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {

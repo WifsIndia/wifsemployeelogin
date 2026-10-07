@@ -34,12 +34,12 @@ const FEATURES = [
 function Landing() {
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center justify-between px-5 py-5 lg:px-12">
-        <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-primary font-display text-lg font-bold text-primary-foreground">
+      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-5 sm:px-5 lg:px-12">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary font-display text-lg font-bold text-primary-foreground">
             W
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="font-display text-sm font-bold tracking-wide">WiFS INDIA</p>
             <p className="text-xs text-muted-foreground">Employee Portal</p>
           </div>
@@ -49,7 +49,7 @@ function Landing() {
         </Button>
       </header>
 
-      <section className="mx-auto max-w-4xl px-5 py-20 text-center lg:py-28">
+      <section className="mx-auto max-w-4xl px-5 py-12 text-center sm:py-20 lg:py-28">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-foreground">
           Internal use only
         </p>

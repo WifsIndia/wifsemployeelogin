@@ -181,14 +181,14 @@ function Page() {
         }
       />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-[200px] flex-1">
+      <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+        <div className="relative min-w-0">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input className="pl-9" placeholder="Search all documents" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         {perm.create && !current?.company_id && (companies.data?.length ?? 0) > 0 && (
           <select
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+            className="h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-base sm:h-9 md:text-sm"
             value={companyId}
             onChange={(e) => setCompanyId(e.target.value)}
             aria-label="Visible to"
@@ -209,9 +209,9 @@ function Page() {
             Home
           </button>
           {trail.map((f) => (
-            <span key={f.id} className="flex items-center gap-1">
+            <span key={f.id} className="flex min-w-0 max-w-full items-center gap-1">
               <ChevronRight className="size-3 text-muted-foreground" />
-              <button className="font-medium text-primary hover:underline" onClick={() => setFolderId(f.id)}>
+              <button className="min-w-0 break-words text-left font-medium text-primary hover:underline" onClick={() => setFolderId(f.id)}>
                 {f.name}
               </button>
             </span>
@@ -227,11 +227,11 @@ function Page() {
         ) : (
           <ul className="divide-y divide-border">
             {subFolders.map((f) => (
-              <li key={f.id} className="flex items-center gap-3 px-4 py-3">
+              <li key={f.id} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-1 px-4 py-3 sm:gap-3">
                 <button className="flex min-w-0 flex-1 items-center gap-3 text-left" onClick={() => setFolderId(f.id)}>
                   <Folder className="size-5 shrink-0 text-primary" />
                   <span className="truncate font-medium">{f.name}</span>
-                  <span className="text-xs text-muted-foreground">{companyName(f.company_id)}</span>
+                  <span className="hidden truncate text-xs text-muted-foreground sm:inline">{companyName(f.company_id)}</span>
                 </button>
                 {perm.edit && (
                   <Button size="icon" variant="ghost" aria-label="Rename folder" onClick={() => setFolderDialog(f)}>
@@ -246,7 +246,7 @@ function Page() {
               </li>
             ))}
             {files.map((d) => (
-              <li key={d.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+              <li key={d.id} className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 px-4 py-3 sm:flex sm:gap-3">
                 <FileText className="size-5 shrink-0 text-muted-foreground" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{d.name}</p>
@@ -256,6 +256,7 @@ function Page() {
                     {q && ` · ${folderPath(d.folder_id)}`}
                   </p>
                 </div>
+                <div className="col-start-2 flex flex-wrap gap-1 sm:ml-auto sm:shrink-0">
                 <Button size="icon" variant="ghost" aria-label="Open" onClick={() => openDoc(d, false)}>
                   <Eye className="size-4" />
                 </Button>
@@ -272,6 +273,7 @@ function Page() {
                     <Trash2 className="size-4" />
                   </Button>
                 )}
+                </div>
               </li>
             ))}
           </ul>

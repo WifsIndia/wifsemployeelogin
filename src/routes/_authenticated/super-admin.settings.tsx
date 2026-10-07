@@ -29,10 +29,10 @@ function SettingsPage() {
     <div className="mx-auto max-w-6xl">
       <PageHeader title="Settings" description="Organization-wide configuration" />
       <div className="flex flex-col gap-6 lg:flex-row">
-        <nav className="flex gap-1 overflow-x-auto lg:w-52 lg:shrink-0 lg:flex-col">
+        <nav className="flex min-w-0 max-w-full gap-1 overflow-x-auto overscroll-x-contain pb-2 lg:pb-0 lg:w-52 lg:shrink-0 lg:flex-col">
           {SECTIONS.map(([key, label]) => (
             <Link key={key} to="/super-admin/settings" search={{ section: key }}
-              className={cn("whitespace-nowrap rounded-md px-3 py-2 text-sm", section === key ? "bg-primary font-semibold text-primary-foreground" : "hover:bg-muted")}>
+              className={cn("shrink-0 whitespace-nowrap rounded-md px-3 py-3 text-sm lg:py-2", section === key ? "bg-primary font-semibold text-primary-foreground" : "hover:bg-muted")}>
               {label}
             </Link>
           ))}
