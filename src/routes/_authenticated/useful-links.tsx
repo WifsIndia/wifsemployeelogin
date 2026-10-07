@@ -1,3 +1,4 @@
+import { RequireModule } from "@/components/AppShell";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -19,7 +20,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 
 export const Route = createFileRoute("/_authenticated/useful-links")({
   head: () => pageHead("Useful Links", "Handy links for WiFS staff."),
-  component: Page,
+  component: () => <RequireModule module="useful_links"><Page /></RequireModule>,
 });
 
 type LinkRow = Database["public"]["Tables"]["useful_links"]["Row"];

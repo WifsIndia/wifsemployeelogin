@@ -1,3 +1,4 @@
+import { RequireModule } from "@/components/AppShell";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -13,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 export const Route = createFileRoute("/_authenticated/attendance")({
   head: () => pageHead("Attendance", "Check in, check out and view attendance history."),
-  component: AttendancePage,
+  component: () => <RequireModule module="attendance"><AttendancePage /></RequireModule>,
 });
 
 type Range = "week" | "month" | "custom";

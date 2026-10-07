@@ -1,3 +1,4 @@
+import { RequireModule } from "@/components/AppShell";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -16,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/_authenticated/work-log")({
   head: () => pageHead("Daily Work Log", "Record what you worked on today and view previous logs."),
-  component: WorkLogPage,
+  component: () => <RequireModule module="work_logs"><WorkLogPage /></RequireModule>,
 });
 
 function WorkLogPage() {

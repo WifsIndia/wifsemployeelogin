@@ -1,3 +1,4 @@
+import { RequireModule } from "@/components/AppShell";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -21,7 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   head: () => pageHead("Tasks", "View, update and assign tasks."),
-  component: TasksPage,
+  component: () => <RequireModule module="tasks"><TasksPage /></RequireModule>,
 });
 
 type TaskStatus = Database["public"]["Enums"]["task_status"];

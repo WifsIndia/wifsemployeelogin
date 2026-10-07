@@ -86,7 +86,7 @@ export function RequireModule({ module, children }: { module: string; children: 
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { profile, primaryRole, signOut, user } = useAuth();
+  const { profile, primaryRole, signOut, user, roles } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -113,7 +113,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   const perms = usePermissions();
-  const { roles } = useAuth();
   const items = NAV.filter((e) => (!e.roles || e.roles.some((r) => roles.includes(r))) && (!e.module || perms.get(e.module).view))
     .map((e) => (e.item === I.tasks && (primaryRole === "employee" || primaryRole === "agent") ? I.myTasks : e.item));
   const showNotif = perms.get("notifications").view;

@@ -1,3 +1,4 @@
+import { RequireModule } from "@/components/AppShell";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -18,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 export const Route = createFileRoute("/_authenticated/leave")({
   head: () => pageHead("Leave", "Apply for leave and track or review leave requests."),
-  component: LeavePage,
+  component: () => <RequireModule module="leave"><LeavePage /></RequireModule>,
 });
 
 type LeaveType = Database["public"]["Enums"]["leave_type"];
