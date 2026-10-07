@@ -87,7 +87,7 @@ export const MODULES: [string, string][] = [
   ["locations", "Locations"], ["tasks", "Tasks"], ["work_logs", "Work Logs"], ["leave", "Leave"],
   ["payroll", "Payroll"], ["reports", "Reports"], ["documents", "Documents"], ["announcements", "Announcements"],
   ["notifications", "Notifications"], ["companies", "Companies"], ["business_activity", "Business Activity"],
-  ["audit_logs", "Audit Logs"], ["settings", "Settings"], ["roles", "Roles & Permissions"],
+  ["audit_logs", "Audit Logs"], ["settings", "Settings"], ["roles", "Roles & Permissions"], ["useful_links", "Useful Links"],
 ];
 const ACTIONS = ["can_view", "can_create", "can_edit", "can_delete", "can_approve"] as const;
 type Perm = Database["public"]["Tables"]["role_permissions"]["Row"];

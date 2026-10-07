@@ -20,6 +20,7 @@ import {
   UsersRound,
   Loader2,
   Wallet,
+  Link2,
 } from "lucide-react";
 import { useAuth, type AppRole } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,6 +49,7 @@ const I = {
   org: { to: "/super-admin/settings", label: "Settings", icon: Settings },
   payroll: { to: "/payroll", label: "Payroll", icon: Wallet },
   docs: { to: "/documents", label: "Documents", icon: FileText },
+  links: { to: "/useful-links", label: "Useful Links", icon: Link2 },
   profile: { to: "/profile", label: "Profile", icon: UserRound },
 } satisfies Record<string, NavItem>;
 
@@ -121,7 +123,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       ? [...roleBase.slice(0, -1), I.reports, roleBase[roleBase.length - 1]!]
       : roleBase;
   const showPayroll = canPayroll || primaryRole === "super_admin";
-  const items = showPayroll ? [...base.slice(0, -1), I.payroll, base[base.length - 1]!] : base;
+  const withPay = showPayroll ? [...base.slice(0, -1), I.payroll, base[base.length - 1]!] : base;
+  const items = [...withPay.slice(0, -1), I.links, withPay[withPay.length - 1]!];
 
   const sidebar = (
     <div className="flex h-full w-64 max-w-[calc(100vw-3rem)] flex-col bg-sidebar text-sidebar-foreground">

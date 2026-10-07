@@ -141,6 +141,13 @@
       "when": 1791395821102,
       "tag": "0019_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1791395952240,
+      "tag": "0020_migration",
+      "breakpoints": true
     }
   ]
 }

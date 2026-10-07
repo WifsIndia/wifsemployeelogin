@@ -24,6 +24,7 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
+import { Route as AuthenticatedUsefulLinksRouteImport } from './routes/_authenticated/useful-links'
 import { Route as AuthenticatedWorkLogRouteImport } from './routes/_authenticated/work-log'
 import { Route as AuthenticatedAdminEmployeesRouteImport } from './routes/_authenticated/admin.employees'
 import { Route as AuthenticatedSuperAdminSettingsRouteImport } from './routes/_authenticated/super-admin.settings'
@@ -105,6 +106,12 @@ const AuthenticatedTeamRoute = AuthenticatedTeamRouteImport.update({
   path: '/team',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedUsefulLinksRoute =
+  AuthenticatedUsefulLinksRouteImport.update({
+    id: '/useful-links',
+    path: '/useful-links',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedWorkLogRoute = AuthenticatedWorkLogRouteImport.update({
   id: '/work-log',
   path: '/work-log',
@@ -144,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof AuthenticatedReportsRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/team': typeof AuthenticatedTeamRoute
+  '/useful-links': typeof AuthenticatedUsefulLinksRoute
   '/work-log': typeof AuthenticatedWorkLogRoute
   '/admin/employees': typeof AuthenticatedAdminEmployeesRoute
   '/super-admin/settings': typeof AuthenticatedSuperAdminSettingsRoute
@@ -164,6 +172,7 @@ export interface FileRoutesByTo {
   '/reports': typeof AuthenticatedReportsRoute
   '/tasks': typeof AuthenticatedTasksRoute
   '/team': typeof AuthenticatedTeamRoute
+  '/useful-links': typeof AuthenticatedUsefulLinksRoute
   '/work-log': typeof AuthenticatedWorkLogRoute
   '/admin/employees': typeof AuthenticatedAdminEmployeesRoute
   '/super-admin/settings': typeof AuthenticatedSuperAdminSettingsRoute
@@ -186,6 +195,7 @@ export interface FileRoutesById {
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRoute
   '/_authenticated/team': typeof AuthenticatedTeamRoute
+  '/_authenticated/useful-links': typeof AuthenticatedUsefulLinksRoute
   '/_authenticated/work-log': typeof AuthenticatedWorkLogRoute
   '/_authenticated/admin/employees': typeof AuthenticatedAdminEmployeesRoute
   '/_authenticated/super-admin/settings': typeof AuthenticatedSuperAdminSettingsRoute
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/tasks'
     | '/team'
+    | '/useful-links'
     | '/work-log'
     | '/admin/employees'
     | '/super-admin/settings'
@@ -228,6 +239,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/tasks'
     | '/team'
+    | '/useful-links'
     | '/work-log'
     | '/admin/employees'
     | '/super-admin/settings'
@@ -249,6 +261,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reports'
     | '/_authenticated/tasks'
     | '/_authenticated/team'
+    | '/_authenticated/useful-links'
     | '/_authenticated/work-log'
     | '/_authenticated/admin/employees'
     | '/_authenticated/super-admin/settings'
@@ -369,6 +382,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTeamRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/useful-links': {
+      id: '/_authenticated/useful-links'
+      path: '/useful-links'
+      fullPath: '/useful-links'
+      preLoaderRoute: typeof AuthenticatedUsefulLinksRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/work-log': {
       id: '/_authenticated/work-log'
       path: '/work-log'
@@ -412,6 +432,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRoute
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
+  AuthenticatedUsefulLinksRoute: typeof AuthenticatedUsefulLinksRoute
   AuthenticatedWorkLogRoute: typeof AuthenticatedWorkLogRoute
   AuthenticatedAdminEmployeesRoute: typeof AuthenticatedAdminEmployeesRoute
   AuthenticatedSuperAdminSettingsRoute: typeof AuthenticatedSuperAdminSettingsRoute
@@ -430,6 +451,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRoute,
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,
+  AuthenticatedUsefulLinksRoute: AuthenticatedUsefulLinksRoute,
   AuthenticatedWorkLogRoute: AuthenticatedWorkLogRoute,
   AuthenticatedAdminEmployeesRoute: AuthenticatedAdminEmployeesRoute,
   AuthenticatedSuperAdminSettingsRoute: AuthenticatedSuperAdminSettingsRoute,
