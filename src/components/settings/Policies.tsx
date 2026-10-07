@@ -200,42 +200,139 @@ export function RolesSection() {
 
 /* ---------------- Leave Policy ---------------- */
 type LP = Database["public"]["Tables"]["leave_policies"]["Row"];
+type PSet = Database["public"]["Tables"]["leave_policy_sets"]["Row"];
+type PType = Database["public"]["Tables"]["leave_policy_types"]["Row"];
+type PTypeDraft = Omit<PType, "id" | "policy_id" | "created_at"> & { id?: string };
+const DAYS = [[1, "Mon"], [2, "Tue"], [3, "Wed"], [4, "Thu"], [5, "Fri"], [6, "Sat"], [7, "Sun"]] as const;
+const blankType = (): PTypeDraft => ({ name: "", base_type: null, days_per_year: 0, is_paid: true, allow_half_day: true, min_notice_days: 0, carry_forward: false, max_carry_forward: 0, requires_approval: true, approver: "manager", active: true });
+
 export function LeavePolicySection() {
   const qc = useQueryClient();
-  const q = useQuery({ queryKey: ["leave-policies"], queryFn: async () => (await supabase.from("leave_policies").select("*").order("leave_type")).data ?? [] });
-  const [rows, setRows] = useState<LP[]>([]);
-  useEffect(() => { if (q.data) setRows(q.data); }, [q.data]);
-  const set = (i: number, patch: Partial<LP>) => setRows(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
-  const save = async () => {
-    const { error } = await supabase.from("leave_policies").upsert(rows);
-    if (error) return toast.error("Could not save leave policy.");
-    toast.success("Leave policy saved");
-    qc.invalidateQueries({ queryKey: ["leave-policies"] });
+  const [edit, setEdit] = useState<{ set: Partial<PSet>; types: PTypeDraft[] } | null>(null);
+  const q = useQuery({
+    queryKey: ["leave-policy-sets"],
+    queryFn: async () => {
+      const [s, t, p] = await Promise.all([
+        supabase.from("leave_policy_sets").select("*").order("name"),
+        supabase.from("leave_policy_types").select("*").order("name"),
+        supabase.from("profiles").select("leave_policy_id"),
+      ]);
+      return { sets: s.data ?? [], types: t.data ?? [], counts: (p.data ?? []).reduce<Record<string, number>>((m, r) => { if (r.leave_policy_id) m[r.leave_policy_id] = (m[r.leave_policy_id] ?? 0) + 1; return m; }, {}) };
+    },
+  });
+  const refresh = () => qc.invalidateQueries({ queryKey: ["leave-policy-sets"] });
+  const toggle = async (x: PSet) => {
+    const { error } = await supabase.from("leave_policy_sets").update({ active: !x.active }).eq("id", x.id);
+    if (error) toast.error("You don't have permission to change leave policies.");
+    refresh();
   };
   if (q.isLoading) return <Loading />;
+  const d = q.data!;
   return (
     <div className="space-y-4">
-      {rows.map((r, i) => (
-        <Panel key={r.leave_type} title={`${r.label} (${r.leave_type})`} action={<label className="flex items-center gap-2 text-sm"><Switch checked={r.active} onCheckedChange={(v) => set(i, { active: v })} /> Active</label>}>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Field label="Label"><Input value={r.label} onChange={(e) => set(i, { label: e.target.value })} /></Field>
-            <Field label="Days per year"><Input type="number" min={0} value={r.days_per_year} onChange={(e) => set(i, { days_per_year: Number(e.target.value) })} /></Field>
-            <Field label="Minimum notice (days)"><Input type="number" min={0} value={r.min_notice_days} onChange={(e) => set(i, { min_notice_days: Number(e.target.value) })} /></Field>
-            <Field label="Approved by">
-              <NativeSelect value={r.approver} onChange={(e) => set(i, { approver: e.target.value })}>
-                <option value="manager">Manager</option><option value="hr">HR</option><option value="admin">Admin</option><option value="super_admin">Super Admin</option>
-              </NativeSelect>
-            </Field>
-            <label className="flex items-center gap-2 text-sm"><Switch checked={r.is_paid} onCheckedChange={(v) => set(i, { is_paid: v })} /> Paid leave</label>
-            <label className="flex items-center gap-2 text-sm"><Switch checked={r.requires_approval} onCheckedChange={(v) => set(i, { requires_approval: v })} /> Needs approval</label>
-            <label className="flex items-center gap-2 text-sm"><Switch checked={r.allow_half_day} onCheckedChange={(v) => set(i, { allow_half_day: v })} /> Half-day allowed</label>
-            <label className="flex items-center gap-2 text-sm"><Switch checked={r.carry_forward} onCheckedChange={(v) => set(i, { carry_forward: v })} /> Carry forward</label>
-            {r.carry_forward && <Field label="Max carry-forward days"><Input type="number" min={0} value={r.max_carry_forward} onChange={(e) => set(i, { max_carry_forward: Number(e.target.value) })} /></Field>}
-          </div>
-        </Panel>
-      ))}
-      <Button onClick={save}>Save leave policy</Button>
+      <div className="flex justify-end">
+        <Button onClick={() => setEdit({ set: { name: "", description: "", working_days: [1, 2, 3, 4, 5, 6], active: true }, types: [blankType()] })}><Plus className="size-4" /> New policy</Button>
+      </div>
+      {d.sets.length === 0 ? <Empty>No leave policies yet.</Empty> : d.sets.map((x) => {
+        const types = d.types.filter((t) => t.policy_id === x.id);
+        return (
+          <Panel key={x.id} title={x.name} action={
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 text-sm"><Switch checked={x.active} onCheckedChange={() => toggle(x)} /> Active</label>
+              <Button size="sm" variant="outline" onClick={() => setEdit({ set: x, types: types.map(({ policy_id: _p, created_at: _c, ...r }) => r) })}><Pencil className="size-4" /> Edit</Button>
+            </div>
+          }>
+            {x.description && <p className="mb-2 text-sm text-muted-foreground">{x.description}</p>}
+            <p className="text-sm">Working days: {DAYS.filter(([n]) => x.working_days.includes(n)).map(([, l]) => l).join(", ") || "none"} · {d.counts[x.id] ?? 0} employees</p>
+            <div className="mt-3 overflow-x-auto">
+              <table className={tableCls}>
+                <thead><tr><th className={thCls}>Leave type</th><th className={thCls}>Days/yr</th><th className={thCls}>Paid</th><th className={thCls}>Half-day</th><th className={thCls}>Notice</th><th className={thCls}>Carry fwd</th><th className={thCls}>Approver</th></tr></thead>
+                <tbody>{types.map((t) => (
+                  <tr key={t.id} className={t.active ? "" : "opacity-50"}>
+                    <td className={tdCls}>{t.name}</td><td className={tdCls}>{t.days_per_year}</td><td className={tdCls}>{t.is_paid ? "Paid" : "Unpaid"}</td>
+                    <td className={tdCls}>{t.allow_half_day ? "Yes" : "No"}</td><td className={tdCls}>{t.min_notice_days}d</td>
+                    <td className={tdCls}>{t.carry_forward ? `Up to ${t.max_carry_forward}` : "No"}</td><td className={tdCls}>{t.requires_approval ? t.approver : "Not needed"}</td>
+                  </tr>))}</tbody>
+              </table>
+            </div>
+          </Panel>
+        );
+      })}
+      {edit && <PolicyDialog init={edit} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); refresh(); }} />}
     </div>
+  );
+}
+
+function PolicyDialog({ init, onClose, onSaved }: { init: { set: Partial<PSet>; types: PTypeDraft[] }; onClose: () => void; onSaved: () => void }) {
+  const [s, setS] = useState(init.set);
+  const [types, setTypes] = useState(init.types);
+  const [saving, setSaving] = useState(false);
+  const setT = (i: number, patch: Partial<PTypeDraft>) => setTypes(types.map((t, j) => (j === i ? { ...t, ...patch } : t)));
+  const save = async () => {
+    const name = (s.name ?? "").trim();
+    if (!name) return toast.error("Policy name is required.");
+    const clean = types.map((t) => ({ ...t, name: t.name.trim() }));
+    if (clean.some((t) => !t.name)) return toast.error("Every leave type needs a name.");
+    if (new Set(clean.map((t) => t.name.toLowerCase())).size !== clean.length) return toast.error("Leave type names must be unique.");
+    if (clean.some((t) => t.days_per_year < 0 || t.days_per_year > 365 || t.min_notice_days < 0 || t.max_carry_forward < 0)) return toast.error("Check the day values.");
+    setSaving(true);
+    try {
+      const row = { name, description: s.description?.trim() || null, working_days: s.working_days ?? [], active: s.active ?? true };
+      const r = s.id ? await supabase.from("leave_policy_sets").update(row).eq("id", s.id).select("id").single() : await supabase.from("leave_policy_sets").insert(row).select("id").single();
+      if (r.error) throw new Error(r.error.code === "23505" ? "A policy with this name already exists." : "You don't have permission to save leave policies.");
+      const pid = r.data.id;
+      const keep = clean.filter((t) => t.id).map((t) => t.id!);
+      const removed = init.types.filter((t) => t.id && !keep.includes(t.id)).map((t) => t.id!);
+      if (removed.length) await supabase.from("leave_policy_types").delete().in("id", removed);
+      const up = await supabase.from("leave_policy_types").upsert(clean.map((t) => ({ ...t, policy_id: pid, max_carry_forward: t.carry_forward ? t.max_carry_forward : 0 })));
+      if (up.error) throw new Error("Could not save leave types.");
+      toast.success("Leave policy saved");
+      onSaved();
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Could not save."); } finally { setSaving(false); }
+  };
+  const wd = s.working_days ?? [];
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+        <DialogHeader><DialogTitle>{s.id ? "Edit leave policy" : "New leave policy"}</DialogTitle></DialogHeader>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Policy name"><Input maxLength={100} value={s.name ?? ""} onChange={(e) => setS({ ...s, name: e.target.value })} /></Field>
+          <label className="flex items-center gap-2 pt-6 text-sm"><Switch checked={s.active ?? true} onCheckedChange={(v) => setS({ ...s, active: v })} /> Active</label>
+          <Field label="Description" className="sm:col-span-2"><Input maxLength={500} value={s.description ?? ""} onChange={(e) => setS({ ...s, description: e.target.value })} /></Field>
+          <div className="sm:col-span-2">
+            <p className="mb-2 text-sm font-medium">Working days (unticked = non-working)</p>
+            <div className="flex flex-wrap gap-3">{DAYS.map(([n, l]) => (
+              <label key={n} className="flex items-center gap-2 text-sm">
+                <Checkbox checked={wd.includes(n)} onCheckedChange={(v) => setS({ ...s, working_days: v ? [...wd, n].sort() : wd.filter((x) => x !== n) })} />{l}
+              </label>))}</div>
+          </div>
+        </div>
+        <div className="space-y-3">
+          <p className="text-sm font-medium">Leave types</p>
+          {types.map((t, i) => (
+            <div key={t.id ?? `new-${i}`} className="grid gap-3 rounded-lg border border-border p-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Field label="Name"><Input maxLength={60} placeholder="e.g. Casual Leave" value={t.name} onChange={(e) => setT(i, { name: e.target.value })} /></Field>
+              <Field label="Days per year"><Input type="number" min={0} value={t.days_per_year} onChange={(e) => setT(i, { days_per_year: Number(e.target.value) })} /></Field>
+              <Field label="Notice (days)"><Input type="number" min={0} value={t.min_notice_days} onChange={(e) => setT(i, { min_notice_days: Number(e.target.value) })} /></Field>
+              <Field label="Approved by">
+                <NativeSelect value={t.approver} onChange={(e) => setT(i, { approver: e.target.value })}>
+                  <option value="manager">Manager</option><option value="hr">HR</option><option value="admin">Admin</option><option value="super_admin">Super Admin</option>
+                </NativeSelect>
+              </Field>
+              <label className="flex items-center gap-2 text-sm"><Switch checked={t.is_paid} onCheckedChange={(v) => setT(i, { is_paid: v })} /> Paid</label>
+              <label className="flex items-center gap-2 text-sm"><Switch checked={t.allow_half_day} onCheckedChange={(v) => setT(i, { allow_half_day: v })} /> Half-day allowed</label>
+              <label className="flex items-center gap-2 text-sm"><Switch checked={t.requires_approval} onCheckedChange={(v) => setT(i, { requires_approval: v })} /> Needs approval</label>
+              <label className="flex items-center gap-2 text-sm"><Switch checked={t.active} onCheckedChange={(v) => setT(i, { active: v })} /> Active</label>
+              <label className="flex items-center gap-2 text-sm"><Switch checked={t.carry_forward} onCheckedChange={(v) => setT(i, { carry_forward: v })} /> Carry forward</label>
+              {t.carry_forward && <Field label="Carry-forward limit (days)"><Input type="number" min={0} value={t.max_carry_forward} onChange={(e) => setT(i, { max_carry_forward: Number(e.target.value) })} /></Field>}
+              <div className="flex items-end justify-end lg:col-span-4"><Button size="sm" variant="ghost" onClick={() => setTypes(types.filter((_, j) => j !== i))}>Remove type</Button></div>
+            </div>
+          ))}
+          <Button variant="outline" size="sm" onClick={() => setTypes([...types, blankType()])}><Plus className="size-4" /> Add leave type</Button>
+        </div>
+        <Button onClick={save} disabled={saving}>Save policy</Button>
+      </DialogContent>
+    </Dialog>
   );
 }
 
