@@ -31,25 +31,29 @@ export function EmployeeEditDialog({ row, people, onClose, onSaved }: {
   const canRole = isAdmin && !isSelf && (isSuper || row.role !== "super_admin");
   const [f, setF] = useState(row);
   const [companies, setCompanies] = useState<string[]>([]);
+  const [locIds, setLocIds] = useState<string[]>([]);
+  const canLoc = isSuper || (isAdmin && !isSelf);
   const [comp, setComp] = useState({ basic_salary: 0, allowances: 0, deductions: 0, payment_mode: "bank", bank_name: "", account_holder: "", account_number: "", ifsc: "", upi_id: "", paid_leave_allowance: "", bond: "", employment_description: "" });
   const [saving, setSaving] = useState(false);
 
   const meta = useQuery({
     queryKey: ["emp-edit-meta", row.id],
     queryFn: async () => {
-      const [d, l, c, uc, ec] = await Promise.all([
+      const [d, l, c, uc, el, ec] = await Promise.all([
         supabase.from("departments").select("id, name").order("name"),
-        supabase.from("office_locations").select("id, name").order("name"),
+        supabase.from("office_locations").select("id, name, active").order("name"),
         supabase.from("companies").select("id, name, active").order("name"),
         supabase.from("user_companies").select("company_id").eq("user_id", row.id),
+        supabase.from("employee_locations").select("location_id").eq("user_id", row.id),
         isSuper ? supabase.from("employee_compensation").select("*").eq("employee_id", row.id).maybeSingle() : Promise.resolve({ data: null }),
       ]);
-      return { depts: d.data ?? [], locs: l.data ?? [], companies: c.data ?? [], mine: (uc.data ?? []).map((x) => x.company_id), comp: ec.data };
+      return { depts: d.data ?? [], locs: l.data ?? [], companies: c.data ?? [], mine: (uc.data ?? []).map((x) => x.company_id), myLocs: (el.data ?? []).map((x) => x.location_id), comp: ec.data };
     },
   });
   useEffect(() => {
     if (!meta.data) return;
     setCompanies(meta.data.mine);
+    setLocIds(meta.data.myLocs);
     if (meta.data.comp) {
       const c = meta.data.comp;
       setComp({ basic_salary: Number(c.basic_salary), allowances: Number(c.allowances), deductions: Number(c.deductions), payment_mode: c.payment_mode, bank_name: c.bank_name ?? "", account_holder: c.account_holder ?? "", account_number: c.account_number ?? "", ifsc: c.ifsc ?? "", upi_id: c.upi_id ?? "", paid_leave_allowance: c.paid_leave_allowance == null ? "" : String(c.paid_leave_allowance), bond: c.bond ?? "", employment_description: c.employment_description ?? "" });
@@ -86,6 +90,15 @@ export function EmployeeEditDialog({ row, people, onClose, onSaved }: {
         const remove = [...before].filter((c) => !after.has(c));
         if (add.length) { const r = await supabase.from("user_companies").insert(add); if (r.error) throw new Error("Could not update companies."); }
         if (remove.length) await supabase.from("user_companies").delete().eq("user_id", row.id).in("company_id", remove);
+      }
+
+      if (canLoc) {
+        const before = new Set(meta.data?.myLocs ?? []);
+        const after = new Set(locIds);
+        const add = locIds.filter((l) => !before.has(l)).map((location_id) => ({ user_id: row.id, location_id }));
+        const remove = [...before].filter((l) => !after.has(l));
+        if (add.length) { const r = await supabase.from("employee_locations").insert(add); if (r.error) throw new Error("You don't have permission to change office locations."); }
+        if (remove.length) { const r = await supabase.from("employee_locations").delete().eq("user_id", row.id).in("location_id", remove); if (r.error) throw new Error("Could not update office locations."); }
       }
 
       if (isSuper) {
@@ -168,6 +181,26 @@ export function EmployeeEditDialog({ row, people, onClose, onSaved }: {
                 ))}
               </div>
             )}
+          </div>
+          <div className="sm:col-span-2">
+            <p className="mb-2 text-sm font-medium">Authorized office locations</p>
+            {!d?.locs.length ? <p className="text-xs text-muted-foreground">No locations set up yet.</p> : (
+              <div className="flex flex-wrap gap-3">
+                {d.locs.map((l) => (
+                  <label key={l.id} className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      disabled={!canLoc}
+                      checked={locIds.includes(l.id)}
+                      onCheckedChange={(v) => setLocIds(v ? [...locIds, l.id] : locIds.filter((x) => x !== l.id))}
+                    />
+                    {l.name}{!l.active && " (inactive)"}
+                  </label>
+                ))}
+              </div>
+            )}
+            <p className="mt-1 text-xs text-muted-foreground">
+              {isSelf && !isSuper ? "You can't change your own locations." : "The employee can check in and out only at the ticked locations."}
+            </p>
           </div>
           {isSuper && (
             <div className="grid gap-3 rounded-lg border border-border p-3 sm:col-span-2 sm:grid-cols-3">
