@@ -162,6 +162,13 @@
       "when": 1791397507347,
       "tag": "0022_attendance_accuracy_and_day",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1791401045412,
+      "tag": "0023_overnight_checkout_assigned_leave_policy",
+      "breakpoints": true
     }
   ]
 }

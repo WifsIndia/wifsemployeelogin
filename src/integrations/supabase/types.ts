@@ -1543,6 +1543,10 @@ export type Database = {
         Args: { lat1: number; lat2: number; lon1: number; lon2: number }
         Returns: number
       }
+      employee_working_day_count: {
+        Args: { _employee: string; _end: string; _start: string }
+        Returns: number
+      }
       generate_payroll: {
         Args: { _emp: string; _month: string }
         Returns: {
