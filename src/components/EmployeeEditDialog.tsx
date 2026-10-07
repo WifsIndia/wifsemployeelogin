@@ -31,7 +31,7 @@ export function EmployeeEditDialog({ row, people, onClose, onSaved }: {
   const canRole = isAdmin && !isSelf && (isSuper || row.role !== "super_admin");
   const [f, setF] = useState(row);
   const [companies, setCompanies] = useState<string[]>([]);
-  const [comp, setComp] = useState({ basic_salary: 0, allowances: 0, deductions: 0, payment_mode: "bank", bank_name: "", account_holder: "", account_number: "", ifsc: "", upi_id: "" });
+  const [comp, setComp] = useState({ basic_salary: 0, allowances: 0, deductions: 0, payment_mode: "bank", bank_name: "", account_holder: "", account_number: "", ifsc: "", upi_id: "", paid_leave_allowance: "", bond: "", employment_description: "" });
   const [saving, setSaving] = useState(false);
 
   const meta = useQuery({
@@ -52,7 +52,7 @@ export function EmployeeEditDialog({ row, people, onClose, onSaved }: {
     setCompanies(meta.data.mine);
     if (meta.data.comp) {
       const c = meta.data.comp;
-      setComp({ basic_salary: Number(c.basic_salary), allowances: Number(c.allowances), deductions: Number(c.deductions), payment_mode: c.payment_mode, bank_name: c.bank_name ?? "", account_holder: c.account_holder ?? "", account_number: c.account_number ?? "", ifsc: c.ifsc ?? "", upi_id: c.upi_id ?? "" });
+      setComp({ basic_salary: Number(c.basic_salary), allowances: Number(c.allowances), deductions: Number(c.deductions), payment_mode: c.payment_mode, bank_name: c.bank_name ?? "", account_holder: c.account_holder ?? "", account_number: c.account_number ?? "", ifsc: c.ifsc ?? "", upi_id: c.upi_id ?? "", paid_leave_allowance: c.paid_leave_allowance == null ? "" : String(c.paid_leave_allowance), bond: c.bond ?? "", employment_description: c.employment_description ?? "" });
     }
   }, [meta.data]);
 
@@ -89,7 +89,11 @@ export function EmployeeEditDialog({ row, people, onClose, onSaved }: {
       }
 
       if (isSuper) {
-        const r = await supabase.from("employee_compensation").upsert({ employee_id: row.id, ...comp, bank_name: comp.bank_name || null, account_holder: comp.account_holder || null, account_number: comp.account_number || null, ifsc: comp.ifsc || null, upi_id: comp.upi_id || null });
+        if (comp.basic_salary < 0 || comp.allowances < 0 || comp.deductions < 0 || (comp.paid_leave_allowance !== "" && (Number(comp.paid_leave_allowance) < 0 || Number(comp.paid_leave_allowance) > 365))) throw new Error("Salary and leave values must be valid positive numbers.");
+        if (comp.ifsc && !/^[A-Za-z]{4}0[A-Za-z0-9]{6}$/.test(comp.ifsc.trim())) throw new Error("IFSC code looks invalid (e.g. SBIN0001234).");
+        if (comp.bond.length > 500 || comp.employment_description.length > 2000) throw new Error("Bond or description is too long.");
+        comp.ifsc = comp.ifsc.trim().toUpperCase();
+        const r = await supabase.from("employee_compensation").upsert({ employee_id: row.id, ...comp, bank_name: comp.bank_name || null, account_holder: comp.account_holder || null, account_number: comp.account_number || null, ifsc: comp.ifsc || null, upi_id: comp.upi_id || null, paid_leave_allowance: comp.paid_leave_allowance === "" ? null : Number(comp.paid_leave_allowance), bond: comp.bond.trim() || null, employment_description: comp.employment_description.trim() || null });
         if (r.error) throw new Error("Could not save salary details.");
       }
       toast.success("Employee updated");
@@ -167,8 +171,8 @@ export function EmployeeEditDialog({ row, people, onClose, onSaved }: {
           </div>
           {isSuper && (
             <div className="grid gap-3 rounded-lg border border-border p-3 sm:col-span-2 sm:grid-cols-3">
-              <p className="text-sm font-medium sm:col-span-3">Salary & payment (Super Admin only)</p>
-              <Field label="Basic salary"><Input type="number" value={comp.basic_salary} onChange={(e) => setComp({ ...comp, basic_salary: Number(e.target.value) })} /></Field>
+              <p className="text-sm font-medium sm:col-span-3">Salary, bank & employment terms (Super Admin only)</p>
+              <Field label="Salary (basic, monthly)"><Input type="number" value={comp.basic_salary} onChange={(e) => setComp({ ...comp, basic_salary: Number(e.target.value) })} /></Field>
               <Field label="Allowances"><Input type="number" value={comp.allowances} onChange={(e) => setComp({ ...comp, allowances: Number(e.target.value) })} /></Field>
               <Field label="Other deductions"><Input type="number" value={comp.deductions} onChange={(e) => setComp({ ...comp, deductions: Number(e.target.value) })} /></Field>
               <Field label="Payment mode">
@@ -181,6 +185,9 @@ export function EmployeeEditDialog({ row, people, onClose, onSaved }: {
               <Field label="Account number"><Input value={comp.account_number} onChange={(e) => setComp({ ...comp, account_number: e.target.value })} /></Field>
               <Field label="IFSC"><Input value={comp.ifsc} onChange={(e) => setComp({ ...comp, ifsc: e.target.value })} /></Field>
               <Field label="UPI ID"><Input value={comp.upi_id} onChange={(e) => setComp({ ...comp, upi_id: e.target.value })} /></Field>
+              <Field label="Paid leave allowance (days/year)"><Input type="number" min={0} value={comp.paid_leave_allowance} onChange={(e) => setComp({ ...comp, paid_leave_allowance: e.target.value })} /></Field>
+              <Field label="Bond" className="sm:col-span-2"><Input maxLength={500} placeholder="e.g. 1 year service bond" value={comp.bond} onChange={(e) => setComp({ ...comp, bond: e.target.value })} /></Field>
+              <Field label="Employment description" className="sm:col-span-3"><textarea maxLength={2000} rows={3} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={comp.employment_description} onChange={(e) => setComp({ ...comp, employment_description: e.target.value })} /></Field>
             </div>
           )}
         </div>
