@@ -592,6 +592,8 @@ export type Database = {
         Row: {
           address: string | null
           audit_retention_days: number
+          auto_mark_early_departure: boolean
+          auto_mark_late: boolean
           city: string | null
           country: string | null
           currency: string
@@ -610,6 +612,7 @@ export type Database = {
           overtime_enabled: boolean
           phone: string | null
           pin_code: string | null
+          require_gps: boolean
           salary_divisor_mode: string
           salary_fixed_divisor: number
           state: string | null
@@ -621,6 +624,8 @@ export type Database = {
         Insert: {
           address?: string | null
           audit_retention_days?: number
+          auto_mark_early_departure?: boolean
+          auto_mark_late?: boolean
           city?: string | null
           country?: string | null
           currency?: string
@@ -639,6 +644,7 @@ export type Database = {
           overtime_enabled?: boolean
           phone?: string | null
           pin_code?: string | null
+          require_gps?: boolean
           salary_divisor_mode?: string
           salary_fixed_divisor?: number
           state?: string | null
@@ -650,6 +656,8 @@ export type Database = {
         Update: {
           address?: string | null
           audit_retention_days?: number
+          auto_mark_early_departure?: boolean
+          auto_mark_late?: boolean
           city?: string | null
           country?: string | null
           currency?: string
@@ -668,6 +676,7 @@ export type Database = {
           overtime_enabled?: boolean
           phone?: string | null
           pin_code?: string | null
+          require_gps?: boolean
           salary_divisor_mode?: string
           salary_fixed_divisor?: number
           state?: string | null
