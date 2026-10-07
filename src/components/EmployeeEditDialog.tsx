@@ -17,7 +17,7 @@ export type EmpRow = {
   id: string; full_name: string; email: string; phone: string | null; employee_code: string | null;
   designation: string | null; department_id: string | null; manager_id: string | null;
   joining_date: string | null; status: "active" | "inactive"; location_id?: string | null;
-  employment_type?: string; role: AppRole;
+  employment_type?: string; leave_policy_id?: string | null; role: AppRole;
 };
 
 /** Shared org-assignment editor used by Employees page and Super Admin Staff settings. */
@@ -33,21 +33,23 @@ export function EmployeeEditDialog({ row, people, onClose, onSaved }: {
   const [companies, setCompanies] = useState<string[]>([]);
   const [locIds, setLocIds] = useState<string[]>([]);
   const canLoc = isSuper || (isAdmin && !isSelf);
+  const canPolicy = isSuper || (hasRole("admin") && !isSelf);
   const [comp, setComp] = useState({ basic_salary: 0, allowances: 0, deductions: 0, payment_mode: "bank", bank_name: "", account_holder: "", account_number: "", ifsc: "", upi_id: "", paid_leave_allowance: "", bond: "", employment_description: "" });
   const [saving, setSaving] = useState(false);
 
   const meta = useQuery({
     queryKey: ["emp-edit-meta", row.id],
     queryFn: async () => {
-      const [d, l, c, uc, el, ec] = await Promise.all([
+      const [d, l, c, uc, lp, el, ec] = await Promise.all([
         supabase.from("departments").select("id, name").order("name"),
         supabase.from("office_locations").select("id, name, active").order("name"),
         supabase.from("companies").select("id, name, active").order("name"),
         supabase.from("user_companies").select("company_id").eq("user_id", row.id),
+        supabase.from("leave_policy_sets").select("id, name, active").order("name"),
         supabase.from("employee_locations").select("location_id").eq("user_id", row.id),
         isSuper ? supabase.from("employee_compensation").select("*").eq("employee_id", row.id).maybeSingle() : Promise.resolve({ data: null }),
       ]);
-      return { depts: d.data ?? [], locs: l.data ?? [], companies: c.data ?? [], mine: (uc.data ?? []).map((x) => x.company_id), myLocs: (el.data ?? []).map((x) => x.location_id), comp: ec.data };
+      return { depts: d.data ?? [], locs: l.data ?? [], companies: c.data ?? [], mine: (uc.data ?? []).map((x) => x.company_id), policies: lp.data ?? [], myLocs: (el.data ?? []).map((x) => x.location_id), comp: ec.data };
     },
   });
   useEffect(() => {
@@ -74,8 +76,9 @@ export function EmployeeEditDialog({ row, people, onClose, onSaved }: {
         joining_date: f.joining_date || null, status: f.status,
       };
       if (isSuper) { upd.location_id = f.location_id || null; upd.employment_type = f.employment_type || "full_time"; }
+      if (canPolicy && (f.leave_policy_id ?? null) !== (row.leave_policy_id ?? null)) upd.leave_policy_id = f.leave_policy_id || null;
       const { error } = await supabase.from("profiles").update(upd).eq("id", row.id);
-      if (error) throw new Error("Could not save employee details.");
+      if (error) throw new Error(error.message.includes("NOT_ALLOWED_LEAVE_POLICY") ? "You don't have permission to assign this employee's leave policy." : "Could not save employee details.");
 
       if (canRole && f.role !== row.role) {
         await supabase.from("user_roles").delete().eq("user_id", row.id).neq("role", "super_admin");
@@ -182,6 +185,13 @@ export function EmployeeEditDialog({ row, people, onClose, onSaved }: {
               </div>
             )}
           </div>
+          <Field label="Leave policy">
+            <NativeSelect disabled={!canPolicy} value={f.leave_policy_id ?? ""} onChange={(e) => setF({ ...f, leave_policy_id: e.target.value || null })}>
+              <option value="">None</option>
+              {d?.policies.filter((p) => p.active || p.id === f.leave_policy_id).map((p) => <option key={p.id} value={p.id}>{p.name}{!p.active && " (inactive)"}</option>)}
+            </NativeSelect>
+            {isSelf && !isSuper && <p className="text-xs text-muted-foreground">You can't change your own leave policy.</p>}
+          </Field>
           <div className="sm:col-span-2">
             <p className="mb-2 text-sm font-medium">Authorized office locations</p>
             {!d?.locs.length ? <p className="text-xs text-muted-foreground">No locations set up yet.</p> : (

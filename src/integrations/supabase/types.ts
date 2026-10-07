@@ -433,6 +433,95 @@ export type Database = {
         }
         Relationships: []
       }
+      leave_policy_sets: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+          working_days: number[]
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          working_days?: number[]
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          working_days?: number[]
+        }
+        Relationships: []
+      }
+      leave_policy_types: {
+        Row: {
+          active: boolean
+          allow_half_day: boolean
+          approver: string
+          base_type: Database["public"]["Enums"]["leave_type"] | null
+          carry_forward: boolean
+          created_at: string
+          days_per_year: number
+          id: string
+          is_paid: boolean
+          max_carry_forward: number
+          min_notice_days: number
+          name: string
+          policy_id: string
+          requires_approval: boolean
+        }
+        Insert: {
+          active?: boolean
+          allow_half_day?: boolean
+          approver?: string
+          base_type?: Database["public"]["Enums"]["leave_type"] | null
+          carry_forward?: boolean
+          created_at?: string
+          days_per_year?: number
+          id?: string
+          is_paid?: boolean
+          max_carry_forward?: number
+          min_notice_days?: number
+          name: string
+          policy_id: string
+          requires_approval?: boolean
+        }
+        Update: {
+          active?: boolean
+          allow_half_day?: boolean
+          approver?: string
+          base_type?: Database["public"]["Enums"]["leave_type"] | null
+          carry_forward?: boolean
+          created_at?: string
+          days_per_year?: number
+          id?: string
+          is_paid?: boolean
+          max_carry_forward?: number
+          min_notice_days?: number
+          name?: string
+          policy_id?: string
+          requires_approval?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leave_policy_types_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "leave_policy_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_requests: {
         Row: {
           created_at: string
@@ -700,6 +789,7 @@ export type Database = {
           full_name: string
           id: string
           joining_date: string | null
+          leave_policy_id: string | null
           location_id: string | null
           manager_id: string | null
           phone: string | null
@@ -718,6 +808,7 @@ export type Database = {
           full_name?: string
           id: string
           joining_date?: string | null
+          leave_policy_id?: string | null
           location_id?: string | null
           manager_id?: string | null
           phone?: string | null
@@ -736,6 +827,7 @@ export type Database = {
           full_name?: string
           id?: string
           joining_date?: string | null
+          leave_policy_id?: string | null
           location_id?: string | null
           manager_id?: string | null
           phone?: string | null
@@ -755,6 +847,13 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_leave_policy_id_fkey"
+            columns: ["leave_policy_id"]
+            isOneToOne: false
+            referencedRelation: "leave_policy_sets"
             referencedColumns: ["id"]
           },
           {
@@ -1056,6 +1155,11 @@ export type Database = {
         Args: { _employee: string; _month: string }
         Returns: Json
       }
+      can_assign_leave_policy: {
+        Args: { _actor: string; _target: string }
+        Returns: boolean
+      }
+      can_manage_leave_policies: { Args: { _actor: string }; Returns: boolean }
       can_manage_locations: {
         Args: { _actor: string; _target: string }
         Returns: boolean
