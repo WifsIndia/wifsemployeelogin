@@ -6,6 +6,7 @@ import { Plus, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth";
+import { usePermission } from "@/lib/permissions";
 import { pageHead } from "@/lib/meta";
 import { formatDate } from "@/lib/format";
 import { Empty, Loading, PageHeader, StatusPill } from "@/components/AppShell";
@@ -25,9 +26,10 @@ export const Route = createFileRoute("/_authenticated/tasks")({
 
 type TaskStatus = Database["public"]["Enums"]["task_status"];
 type TaskPriority = Database["public"]["Enums"]["task_priority"];
-const STATUSES: TaskStatus[] = ["NOT_STARTED", "IN_PROGRESS", "ON_HOLD", "COMPLETED"];
+const STATUSES: TaskStatus[] = ["NOT_STARTED", "IN_PROGRESS", "ON_HOLD", "COMPLETED", "CANCELLED"];
 const PRIORITIES: TaskPriority[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
-const label = (s: string) => s.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
+const label = (s: string) =>
+  s === "NOT_STARTED" ? "Pending" : s.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
 
 interface TaskRow {
   id: string;
@@ -47,7 +49,8 @@ interface TaskRow {
 
 function TasksPage() {
   const { user, hasRole } = useAuth();
-  const canManage = hasRole("admin", "manager", "ado");
+  const perm = usePermission("tasks");
+  const canManage = hasRole("admin", "manager", "ado") && perm.create;
   const [filter, setFilter] = useState<"ALL" | TaskStatus>("ALL");
   const [mineOnly, setMineOnly] = useState(!canManage);
   const [editing, setEditing] = useState<TaskRow | "new" | null>(null);
