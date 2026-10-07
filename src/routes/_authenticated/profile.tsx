@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -33,6 +33,31 @@ function Page() {
     queryFn: async () => (await supabase.from("departments").select("name").eq("id", profile!.department_id!).maybeSingle()).data,
   });
 
+  const extra = useQuery({
+    queryKey: ["my-assignments", profile?.id],
+    enabled: !!profile?.id,
+    queryFn: async () => {
+      const [p, uc, el, perms] = await Promise.all([
+        supabase.from("profiles").select("leave_policy_id").eq("id", profile!.id).maybeSingle(),
+        supabase.from("user_companies").select("company:companies(name)").eq("user_id", profile!.id),
+        supabase.from("employee_locations").select("location:office_locations(name)").eq("user_id", profile!.id),
+        supabase.rpc("my_permissions"),
+      ]);
+      const pol = p.data?.leave_policy_id
+        ? (await supabase.from("leave_policy_sets").select("name").eq("id", p.data.leave_policy_id).maybeSingle()).data?.name
+        : null;
+      const names = (rows: unknown[] | null, k: string) =>
+        (rows ?? []).map((r) => (r as Record<string, { name: string } | null>)[k]?.name).filter(Boolean).join(", ");
+      return {
+        policy: pol ?? "—",
+        companies: names(uc.data, "company") || "—",
+        locations: names(el.data, "location") || "—",
+        payroll: roles.includes("super_admin") || (perms.data ?? []).some((x) => x.module === "payroll" && x.can_view),
+        docs: roles.includes("super_admin") || (perms.data ?? []).some((x) => x.module === "documents" && x.can_view),
+      };
+    },
+  });
+
   const save = async () => {
     if (!name.trim()) return toast.error("Name is required.");
     const { error } = await supabase.from("profiles").update({ full_name: name.trim(), phone: phone.trim() || null }).eq("id", profile!.id);
@@ -55,11 +80,31 @@ function Page() {
     ["Department", dept.data?.name ?? "—"],
     ["Joining date", profile?.joining_date ? formatDate(profile.joining_date) : "—"],
     ["Role", roles.join(", ") || "employee"],
+    ["Leave policy", extra.data?.policy ?? "—"],
+    ["Companies", extra.data?.companies ?? "—"],
+    ["Office locations", extra.data?.locations ?? "—"],
+  ];
+  const links: { to: string; label: string }[] = [
+    { to: "/attendance", label: "My attendance" },
+    { to: "/leave", label: "Leave & balance" },
+    { to: "/tasks", label: "My tasks" },
+    { to: "/work-log", label: "Daily work" },
+    ...(extra.data?.docs ? [{ to: "/documents", label: "Documents" }] : []),
+    ...(extra.data?.payroll ? [{ to: "/payroll", label: "My payroll" }] : []),
   ];
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <PageHeader title="My Profile" />
+      <Panel title="My records">
+        <div className="flex flex-wrap gap-2">
+          {links.map((l) => (
+            <Button key={l.to} asChild variant="outline" size="sm">
+              <Link to={l.to as "/attendance"}>{l.label}</Link>
+            </Button>
+          ))}
+        </div>
+      </Panel>
       <Panel title="Employee details">
         <dl className="grid gap-3 sm:grid-cols-2">
           {info.map(([k, v]) => (
