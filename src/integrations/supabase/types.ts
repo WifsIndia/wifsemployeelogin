@@ -201,7 +201,9 @@ export type Database = {
           id: string
           log_date: string
           notes: string | null
+          status: string | null
           summary: string
+          task_id: string | null
           updated_at: string
           work_completed: string | null
         }
@@ -212,7 +214,9 @@ export type Database = {
           id?: string
           log_date?: string
           notes?: string | null
+          status?: string | null
           summary: string
+          task_id?: string | null
           updated_at?: string
           work_completed?: string | null
         }
@@ -223,7 +227,9 @@ export type Database = {
           id?: string
           log_date?: string
           notes?: string | null
+          status?: string | null
           summary?: string
+          task_id?: string | null
           updated_at?: string
           work_completed?: string | null
         }
@@ -233,6 +239,13 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_work_logs_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
         ]
@@ -257,6 +270,119 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      document_folders: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_folders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_folders_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_folders_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "document_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          file_path: string
+          folder_id: string | null
+          id: string
+          mime_type: string | null
+          name: string
+          size_bytes: number
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          file_path: string
+          folder_id?: string | null
+          id?: string
+          mime_type?: string | null
+          name: string
+          size_bytes?: number
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          file_path?: string
+          folder_id?: string | null
+          id?: string
+          mime_type?: string | null
+          name?: string
+          size_bytes?: number
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "document_folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       employee_compensation: {
         Row: {
@@ -1081,6 +1207,45 @@ export type Database = {
           },
         ]
       }
+      task_history: {
+        Row: {
+          actor_id: string | null
+          change: string
+          created_at: string
+          id: string
+          task_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          change: string
+          created_at?: string
+          id?: string
+          task_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          change?: string
+          created_at?: string
+          id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_history_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_history_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assignee_id: string
@@ -1221,6 +1386,10 @@ export type Database = {
       calculate_salary: {
         Args: { _employee: string; _month: string }
         Returns: Json
+      }
+      can_access_company: {
+        Args: { _actor: string; _company: string }
+        Returns: boolean
       }
       can_assign_leave_policy: {
         Args: { _actor: string; _target: string }
@@ -1435,7 +1604,12 @@ export type Database = {
         | "OTHER"
         | "EMERGENCY"
       task_priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT"
-      task_status: "NOT_STARTED" | "IN_PROGRESS" | "ON_HOLD" | "COMPLETED"
+      task_status:
+        | "NOT_STARTED"
+        | "IN_PROGRESS"
+        | "ON_HOLD"
+        | "COMPLETED"
+        | "CANCELLED"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1577,7 +1751,13 @@ export const Constants = {
       leave_status: ["PENDING", "APPROVED", "REJECTED", "CANCELLED"],
       leave_type: ["CASUAL", "SICK", "EARNED", "UNPAID", "OTHER", "EMERGENCY"],
       task_priority: ["LOW", "MEDIUM", "HIGH", "URGENT"],
-      task_status: ["NOT_STARTED", "IN_PROGRESS", "ON_HOLD", "COMPLETED"],
+      task_status: [
+        "NOT_STARTED",
+        "IN_PROGRESS",
+        "ON_HOLD",
+        "COMPLETED",
+        "CANCELLED",
+      ],
     },
   },
 } as const
