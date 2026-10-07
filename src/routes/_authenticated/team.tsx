@@ -28,17 +28,19 @@ function TeamPage() {
     queryKey: ["team-extra", today, ids.join(",")],
     enabled: people.isSuccess && ids.length > 0,
     queryFn: async () => {
-      const [att, tasks] = await Promise.all([
+      const [att, tasks, policies, balances] = await Promise.all([
         supabase.from("attendance").select("employee_id, status, check_in_time, check_out_time").eq("attendance_date", today).in("employee_id", ids),
-        supabase.from("tasks").select("assignee_id, status").in("assignee_id", ids).neq("status", "COMPLETED"),
+        supabase.from("tasks").select("assignee_id, status").in("assignee_id", ids).not("status", "in", "(COMPLETED,CANCELLED)"),
+        supabase.from("leave_policy_sets").select("id, name"),
+        Promise.all(ids.map(async (id) => ({ id, rows: (await supabase.rpc("leave_balances", { _employee: id })).data ?? [] }))),
       ]);
-      return { att: att.data ?? [], tasks: tasks.data ?? [] };
+      return { att: att.data ?? [], tasks: tasks.data ?? [], policies: policies.data ?? [], balances };
     },
   });
 
   return (
     <div className="mx-auto max-w-6xl">
-      <PageHeader title="Team" description="People who report to you and their status today." />
+      <PageHeader title="Team" description="People in your reporting line and their status today." />
       <div className="rounded-xl border border-border bg-card p-2">
         {people.isLoading ? (
           <Loading />
@@ -55,6 +57,8 @@ function TeamPage() {
                   <TableHead>Check-in</TableHead>
                   <TableHead>Check-out</TableHead>
                   <TableHead>Open tasks</TableHead>
+                  <TableHead>Leave policy</TableHead>
+                  <TableHead>Leave available</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -70,6 +74,13 @@ function TeamPage() {
                       <TableCell>{formatTime(a?.check_in_time)}</TableCell>
                       <TableCell>{formatTime(a?.check_out_time)}</TableCell>
                       <TableCell>{extra.data?.tasks.filter((t) => t.assignee_id === p.id).length ?? 0}</TableCell>
+                      <TableCell>{extra.data?.policies.find((x) => x.id === p.leave_policy_id)?.name ?? "—"}</TableCell>
+                      <TableCell className="text-xs">
+                        {extra.data?.balances
+                          .find((b) => b.id === p.id)
+                          ?.rows.map((r) => `${r.label} ${Number(r.available)}`)
+                          .join(" · ") || "—"}
+                      </TableCell>
                     </TableRow>
                   );
                 })}

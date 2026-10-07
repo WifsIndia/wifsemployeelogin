@@ -113,6 +113,20 @@
       "when": 1791376110218,
       "tag": "0015_fix_documents_files_read",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1791376631708,
+      "tag": "0016_manager_workflow_scope",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791376652345,
+      "tag": "0017_manager_leave_review_direct",
+      "breakpoints": true
     }
   ]
 }
