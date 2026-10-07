@@ -99,7 +99,7 @@ function Page() {
             .map((p) => ({
               Code: p.employee_code ?? "", Name: p.full_name, Email: p.email, Phone: p.phone ?? "",
               Department: p.department?.name ?? "", Designation: p.designation ?? "",
-              "Reports to": p.manager?.full_name ?? "", Companies: companiesOf(p.id),
+              "Reports to": (Array.isArray(p.manager) ? p.manager[0]?.full_name : (p.manager as { full_name?: string } | null)?.full_name) ?? "", Companies: companiesOf(p.id),
               Type: p.employment_type, Joined: p.joining_date ?? "", Status: p.status,
             }));
         case "attendance": {
@@ -228,13 +228,13 @@ function Page() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard label="Records" value={rows.length} />
             {active!.key === "attendance" && (
-              <StatCard label="Hours worked" value={rows.reduce((s, r) => s + Number(r.Hours), 0).toFixed(1)} />
+              <StatCard label="Hours worked" value={rows.reduce((s, r) => s + Number(r["Hours"]), 0).toFixed(1)} />
             )}
             {active!.key === "payroll" && (
               <StatCard label="Total net payable" value={rows.reduce((s, r) => s + Number(r["Net payable"]), 0).toFixed(2)} />
             )}
             {active!.key === "work" && (
-              <StatCard label="Hours logged" value={rows.reduce((s, r) => s + Number(r.Hours || 0), 0).toFixed(1)} />
+              <StatCard label="Hours logged" value={rows.reduce((s, r) => s + Number(r["Hours"] || 0), 0).toFixed(1)} />
             )}
           </div>
           <div className="overflow-x-auto rounded-xl border border-border bg-card">
