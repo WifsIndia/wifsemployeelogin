@@ -116,9 +116,9 @@ function Page() {
       <Panel title="Employee details">
         <dl className="grid gap-3 sm:grid-cols-2">
           {info.map(([k, v]) => (
-            <div key={k}>
+            <div key={k} className="min-w-0">
               <dt className="text-xs uppercase tracking-wide text-muted-foreground">{k}</dt>
-              <dd className="text-sm font-medium capitalize-first">{v}</dd>
+              <dd className="break-words text-sm font-medium capitalize-first">{v}</dd>
             </div>
           ))}
         </dl>

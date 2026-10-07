@@ -107,7 +107,7 @@ export function AttendanceCard() {
   const status = !row ? "Not checked in" : row.status === "checked_in" ? "Working" : "Checked out";
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-display text-lg font-semibold">Today's attendance</h2>
         {row ? <StatusPill status={row.status} /> : <StatusPill status="Not checked in" />}
@@ -119,7 +119,7 @@ export function AttendanceCard() {
         </div>
       ) : (
         <>
-          <div className="mt-4 grid grid-cols-3 gap-3 text-center">
+          <div className="mt-4 grid grid-cols-1 gap-2 text-center min-[400px]:grid-cols-3 sm:gap-3">
             <Info label="Check-in" value={formatTime(row?.check_in_time)} />
             <Info label="Check-out" value={formatTime(row?.check_out_time)} />
             <Info label="Duration" value={duration(row?.check_in_time ?? null, row?.check_out_time ?? null)} />
@@ -189,9 +189,9 @@ export function AttendanceCard() {
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-muted/60 p-3">
+    <div className="min-w-0 rounded-lg bg-muted/60 p-3">
       <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-0.5 font-display text-base font-semibold">{value}</p>
+      <p className="mt-0.5 break-words font-display text-base font-semibold">{value}</p>
     </div>
   );
 }

@@ -293,11 +293,11 @@ function PolicyDialog({ init, onClose, onSaved }: { init: { set: Partial<PSet>; 
   const wd = s.working_days ?? [];
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-3xl overflow-y-auto">
         <DialogHeader><DialogTitle>{s.id ? "Edit leave policy" : "New leave policy"}</DialogTitle></DialogHeader>
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Policy name"><Input maxLength={100} value={s.name ?? ""} onChange={(e) => setS({ ...s, name: e.target.value })} /></Field>
-          <label className="flex items-center gap-2 pt-6 text-sm"><Switch checked={s.active ?? true} onCheckedChange={(v) => setS({ ...s, active: v })} /> Active</label>
+          <label className="flex items-center gap-2 sm:pt-6 text-sm"><Switch checked={s.active ?? true} onCheckedChange={(v) => setS({ ...s, active: v })} /> Active</label>
           <Field label="Description" className="sm:col-span-2"><Input maxLength={500} value={s.description ?? ""} onChange={(e) => setS({ ...s, description: e.target.value })} /></Field>
           <div className="sm:col-span-2">
             <p className="mb-2 text-sm font-medium">Working days (unticked = non-working)</p>

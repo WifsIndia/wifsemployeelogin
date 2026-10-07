@@ -156,3 +156,19 @@
     color: var(--color-foreground);
   }
 }
+
+/* Contain wide records inside their existing scrollable tables. */
+.portal-content :where(.grid > *, .flex > *) { min-width: 0; }
+.portal-content :where(p, dd, dt, h1, h2, h3, label),
+[role="dialog"] :where(p, label, h2) { overflow-wrap: anywhere; }
+.portal-content :where(.overflow-x-auto) { max-width: 100%; overscroll-behavior-x: contain; }
+.portal-content table th { white-space: nowrap; }
+.portal-content table td { min-width: 6rem; }
+@media (max-width: 639px) {
+  .portal-content select, [role="dialog"] :where(select, textarea) {
+    min-width: 0; max-width: 100%; min-height: 2.75rem; font-size: 1rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
