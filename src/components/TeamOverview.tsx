@@ -7,17 +7,20 @@ import { Empty, Loading, StatCard } from "@/components/AppShell";
 type Scope = "team" | "all";
 
 export function useScopedPeople(scope: Scope) {
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
+  // Managers see their whole reporting line (database limits it to their hierarchy and companies).
+  const wholeLine = scope === "team" && roles.includes("manager");
   return useQuery({
-    queryKey: ["people", scope, user?.id],
+    queryKey: ["people", scope, user?.id, wholeLine],
     enabled: !!user,
     queryFn: async () => {
       let q = supabase
         .from("profiles")
-        .select("id, full_name, designation, department_id, manager_id, status, employee_code, email")
+        .select("id, full_name, designation, department_id, manager_id, status, employee_code, email, leave_policy_id")
         .eq("status", "active")
         .order("full_name");
-      if (scope === "team") q = q.eq("manager_id", user!.id);
+      if (wholeLine) q = q.neq("id", user!.id);
+      else if (scope === "team") q = q.eq("manager_id", user!.id);
       const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
