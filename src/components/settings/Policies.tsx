@@ -231,7 +231,7 @@ export function LeavePolicySection() {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button onClick={() => setEdit({ set: { name: "", description: "", working_days: [1, 2, 3, 4, 5, 6], active: true }, types: [blankType()] })}><Plus className="size-4" /> New policy</Button>
+        <Button onClick={() => setEdit({ set: { name: "", description: "", working_days: [1, 2, 3, 4, 5, 6], active: true, notify_user_ids: [] }, types: [blankType()] })}><Plus className="size-4" /> New policy</Button>
       </div>
       {d.sets.length === 0 ? <Empty>No leave policies yet.</Empty> : d.sets.map((x) => {
         const types = d.types.filter((t) => t.policy_id === x.id);
@@ -277,7 +277,7 @@ function PolicyDialog({ init, onClose, onSaved }: { init: { set: Partial<PSet>; 
     if (clean.some((t) => t.days_per_year < 0 || t.days_per_year > 365 || t.min_notice_days < 0 || t.max_carry_forward < 0)) return toast.error("Check the day values.");
     setSaving(true);
     try {
-      const row = { name, description: s.description?.trim() || null, working_days: s.working_days ?? [], active: s.active ?? true };
+      const row = { name, description: s.description?.trim() || null, working_days: s.working_days ?? [], active: s.active ?? true, notify_user_ids: s.notify_user_ids ?? [] };
       const r = s.id ? await supabase.from("leave_policy_sets").update(row).eq("id", s.id).select("id").single() : await supabase.from("leave_policy_sets").insert(row).select("id").single();
       if (r.error) throw new Error(r.error.code === "23505" ? "A policy with this name already exists." : "You don't have permission to save leave policies.");
       const pid = r.data.id;
@@ -291,6 +291,11 @@ function PolicyDialog({ init, onClose, onSaved }: { init: { set: Partial<PSet>; 
     } catch (e) { toast.error(e instanceof Error ? e.message : "Could not save."); } finally { setSaving(false); }
   };
   const wd = s.working_days ?? [];
+  const notify = s.notify_user_ids ?? [];
+  const people = useQuery({
+    queryKey: ["policy-notify-people"],
+    queryFn: async () => (await supabase.from("profiles").select("id, full_name, designation").eq("status", "active").order("full_name")).data ?? [],
+  });
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-3xl overflow-y-auto">
@@ -305,6 +310,17 @@ function PolicyDialog({ init, onClose, onSaved }: { init: { set: Partial<PSet>; 
               <label key={n} className="flex items-center gap-2 text-sm">
                 <Checkbox checked={wd.includes(n)} onCheckedChange={(v) => setS({ ...s, working_days: v ? [...wd, n].sort() : wd.filter((x) => x !== n) })} />{l}
               </label>))}</div>
+          </div>
+          <div className="sm:col-span-2">
+            <p className="mb-1 text-sm font-medium">Also notify when leave is requested</p>
+            <p className="mb-2 text-xs text-muted-foreground">The employee's manager is always notified. People listed here are notified too, but only for employees they are allowed to see.</p>
+            <div className="max-h-40 overflow-y-auto rounded-md border border-border p-2">
+              {(people.data ?? []).map((u) => (
+                <label key={u.id} className="flex items-center gap-2 py-1 text-sm">
+                  <Checkbox checked={notify.includes(u.id)} onCheckedChange={(v) => setS({ ...s, notify_user_ids: v ? [...notify, u.id] : notify.filter((x) => x !== u.id) })} />
+                  <span className="min-w-0 break-words">{u.full_name}{u.designation ? ` · ${u.designation}` : ""}</span>
+                </label>))}
+            </div>
           </div>
         </div>
         <div className="space-y-3">

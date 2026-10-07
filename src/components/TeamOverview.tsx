@@ -54,8 +54,8 @@ export function TeamOverview({
     queryKey: ["overview", scope, today, ids.join(",")],
     enabled: people.isSuccess,
     queryFn: async () => {
-      if (ids.length === 0) return { att: [], leave: [], tasks: [], logs: [], depts: [] };
-      const [att, leave, tasks, logs, depts] = await Promise.all([
+      if (ids.length === 0) return { att: [], leave: [], tasks: [], logs: [], depts: [], onLeave: [] as string[] };
+      const [att, leave, tasks, logs, depts, onLeaveQ] = await Promise.all([
         supabase.from("attendance").select("employee_id, status, check_in_time").eq("attendance_date", today).in("employee_id", ids),
         supabase
           .from("leave_requests")
@@ -70,6 +70,7 @@ export function TeamOverview({
           .order("log_date", { ascending: false })
           .limit(8),
         supabase.from("departments").select("id, name"),
+        supabase.from("leave_requests").select("employee_id").eq("status", "APPROVED").lte("start_date", today).gte("end_date", today).in("employee_id", ids),
       ]);
       return {
         att: att.data ?? [],
@@ -77,6 +78,7 @@ export function TeamOverview({
         tasks: tasks.data ?? [],
         logs: logs.data ?? [],
         depts: depts.data ?? [],
+        onLeave: (onLeaveQ.data ?? []).map((x) => x.employee_id),
       };
     },
   });
@@ -89,6 +91,7 @@ export function TeamOverview({
   const working = s.att.filter((a) => a.status === "checked_in").length;
   const checkedOut = present - working;
   const total = ids.length;
+  const onLeave = (s.onLeave ?? []).filter((id) => !s.att.some((a) => a.employee_id === id)).length;
   const byStatus = ["NOT_STARTED", "IN_PROGRESS", "ON_HOLD", "COMPLETED", "CANCELLED"].map((st) => ({
     st,
     n: s.tasks.filter((t) => t.status === st).length,
@@ -102,7 +105,7 @@ export function TeamOverview({
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard label={scope === "team" ? "Team size" : "Total employees"} value={total} />
         {can.att && <StatCard label="Present today" value={present} />}
-        {can.att && <StatCard label="Absent today" value={Math.max(0, total - present)} />}
+        {can.att && <StatCard label="Absent today" value={Math.max(0, total - present - onLeave)} />}
         {can.att && <StatCard label="Currently working" value={working} />}
         {can.att && variant !== "hr" && <StatCard label="Checked out" value={checkedOut} />}
         {can.leave && <StatCard label="Pending leave" value={s.leave.length} />}
@@ -122,7 +125,8 @@ export function TeamOverview({
             rows={[
               { label: "Working", n: working },
               { label: "Checked out", n: checkedOut },
-              { label: "Absent", n: Math.max(0, total - present) },
+              { label: "On leave", n: onLeave },
+              { label: "Absent", n: Math.max(0, total - present - onLeave) },
             ]}
             max={Math.max(total, 1)}
           />

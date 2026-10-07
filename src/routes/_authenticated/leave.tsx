@@ -24,6 +24,7 @@ export const Route = createFileRoute("/_authenticated/leave")({
 type LeaveType = Database["public"]["Enums"]["leave_type"];
 const TYPES: LeaveType[] = ["CASUAL", "SICK", "EARNED", "EMERGENCY", "UNPAID", "OTHER"];
 function leaveError(msg: string) {
+  if (msg.includes("LEAVE_OVERLAP")) return "You already have a pending or approved leave covering some of these dates. Cancel it first or choose different dates.";
   if (msg.includes("INSUFFICIENT_BALANCE")) return "Not enough leave balance for this request.";
   if (msg.includes("NOTICE_REQUIRED")) return `This leave type needs ${msg.split("NOTICE_REQUIRED:")[1]?.split(/\D/)[0] ?? "more"} day(s) advance notice.`;
   if (msg.includes("HALF_DAY_NOT_ALLOWED")) return "Half-day is not allowed for this leave type, or start and end dates differ.";

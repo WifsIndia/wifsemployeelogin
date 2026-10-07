@@ -576,6 +576,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          notify_user_ids: string[]
           updated_at: string
           working_days: number[]
         }
@@ -585,6 +586,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          notify_user_ids?: string[]
           updated_at?: string
           working_days?: number[]
         }
@@ -594,6 +596,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          notify_user_ids?: string[]
           updated_at?: string
           working_days?: number[]
         }

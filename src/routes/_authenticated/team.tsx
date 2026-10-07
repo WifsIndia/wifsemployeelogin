@@ -28,13 +28,14 @@ function TeamPage() {
     queryKey: ["team-extra", today, ids.join(",")],
     enabled: people.isSuccess && ids.length > 0,
     queryFn: async () => {
-      const [att, tasks, policies, balances] = await Promise.all([
+      const [att, tasks, policies, balances, onLeave] = await Promise.all([
         supabase.from("attendance").select("employee_id, status, check_in_time, check_out_time").eq("attendance_date", today).in("employee_id", ids),
         supabase.from("tasks").select("assignee_id, status").in("assignee_id", ids).not("status", "in", "(COMPLETED,CANCELLED)"),
         supabase.from("leave_policy_sets").select("id, name"),
         Promise.all(ids.map(async (id) => ({ id, rows: (await supabase.rpc("leave_balances", { _employee: id })).data ?? [] }))),
+        supabase.from("leave_requests").select("employee_id").eq("status", "APPROVED").lte("start_date", today).gte("end_date", today).in("employee_id", ids),
       ]);
-      return { att: att.data ?? [], tasks: tasks.data ?? [], policies: policies.data ?? [], balances };
+      return { att: att.data ?? [], tasks: tasks.data ?? [], policies: policies.data ?? [], balances, onLeave: (onLeave.data ?? []).map((x) => x.employee_id) };
     },
   });
 
@@ -69,7 +70,7 @@ function TeamPage() {
                       <TableCell className="font-medium">{p.full_name}</TableCell>
                       <TableCell>{p.designation ?? "—"}</TableCell>
                       <TableCell>
-                        <StatusPill status={a ? a.status : "absent"} />
+                        <StatusPill status={a ? a.status : extra.data?.onLeave.includes(p.id) ? "On leave" : "absent"} />
                       </TableCell>
                       <TableCell>{formatTime(a?.check_in_time)}</TableCell>
                       <TableCell>{formatTime(a?.check_out_time)}</TableCell>
