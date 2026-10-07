@@ -28,7 +28,7 @@ const ROLES: AppRole[] = ["employee", "agent", "ado", "manager", "hr", "admin"];
 const NONE = "__none";
 
 type Row = {
-  id: string; full_name: string; email: string; phone: string | null; employee_code: string | null;
+  id: string; full_name: string; email: string; username: string | null; phone: string | null; employee_code: string | null;
   designation: string | null; department_id: string | null; manager_id: string | null;
   joining_date: string | null; status: "active" | "inactive";
 };
@@ -63,7 +63,7 @@ function Page() {
   });
 
   const people = (q.data?.people ?? []).filter((p) =>
-    `${p.full_name} ${p.email} ${p.employee_code ?? ""}`.toLowerCase().includes(search.toLowerCase()),
+    `${p.full_name} ${p.email} ${p.username ?? ""} ${p.employee_code ?? ""}`.toLowerCase().includes(search.toLowerCase()),
   );
   const deptName = (id: string | null) => q.data?.depts.find((d) => d.id === id)?.name ?? "—";
 
@@ -74,7 +74,7 @@ function Page() {
         description={`${q.data?.people.length ?? 0} employees`}
         action={<Button onClick={() => setCreating(true)}>Add employee</Button>}
       />
-      <Input placeholder="Search by name, email or code" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-sm" />
+      <Input placeholder="Search by name, username, email or code" value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-sm" />
       {q.isLoading ? (
         <Loading />
       ) : people.length === 0 ? (
@@ -91,7 +91,7 @@ function Page() {
             <tbody className="divide-y divide-border">
               {people.map((p) => (
                 <tr key={p.id}>
-                  <td className="p-3"><p className="font-medium">{p.full_name || "—"}</p><p className="text-xs text-muted-foreground">{p.email}</p></td>
+                  <td className="p-3"><p className="font-medium">{p.full_name || "—"}</p><p className="text-xs text-muted-foreground">{p.username ? `@${p.username} · ` : ""}{p.email}</p></td>
                   <td className="p-3">{p.employee_code ?? "—"}</td>
                   <td className="p-3">{deptName(p.department_id)}</td>
                   <td className="p-3 capitalize">{p.role}</td>
@@ -120,9 +120,10 @@ function Page() {
 
 function CreateDialog({ isAdmin, onClose, onSaved }: { isAdmin: boolean; onClose: () => void; onSaved: () => void }) {
   const create = useServerFn(createEmployee);
-  const [f, setF] = useState({ full_name: "", email: "", password: "", role: "employee" as AppRole });
+  const [f, setF] = useState({ full_name: "", username: "", email: "", password: "", role: "employee" as AppRole });
   const [saving, setSaving] = useState(false);
   const submit = async () => {
+    if (!/^[a-z0-9._-]{3,30}$/.test(f.username.trim().toLowerCase())) return toast.error("Username must be 3–30 letters, numbers, dots, dashes or underscores.");
     if (f.password.length < 8) return toast.error("Temporary password must be at least 8 characters.");
     setSaving(true);
     try {
@@ -141,6 +142,7 @@ function CreateDialog({ isAdmin, onClose, onSaved }: { isAdmin: boolean; onClose
         <DialogHeader><DialogTitle>Add employee</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div><Label>Full name</Label><Input value={f.full_name} onChange={(e) => setF({ ...f, full_name: e.target.value })} /></div>
+          <div><Label>Username</Label><Input autoCapitalize="none" value={f.username} onChange={(e) => setF({ ...f, username: e.target.value.toLowerCase() })} placeholder="e.g. rahul.patil" /></div>
           <div><Label>Email</Label><Input type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></div>
           <div><Label>Temporary password</Label><Input type="text" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} /></div>
           <div>

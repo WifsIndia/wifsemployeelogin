@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck } from "lucide-react";
+import { signInWithUsername } from "@/lib/login.functions";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -44,12 +45,28 @@ function AuthPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    const id = email.trim();
+    if (!id.includes("@")) {
+      try {
+        const r = await signInWithUsername({ data: { username: id, password } });
+        if (!r.ok) { setBusy(false); toast.error(r.error); return; }
+        const { error } = await supabase.auth.setSession({ access_token: r.access_token, refresh_token: r.refresh_token });
+        setBusy(false);
+        if (error) { toast.error("Could not sign in. Please try again."); return; }
+      } catch {
+        setBusy(false);
+        toast.error("Incorrect username or password.");
+        return;
+      }
+      navigate({ to: "/dashboard", replace: true });
+      return;
+    }
+    const { error } = await supabase.auth.signInWithPassword({ email: id, password });
     setBusy(false);
     if (error) {
       toast.error(
         error.message.includes("Invalid login")
-          ? "Incorrect email or password."
+          ? "Incorrect email/username or password."
           : error.message,
       );
       return;
@@ -107,21 +124,22 @@ function AuthPage() {
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {mode === "login"
-              ? "Use the work email address provided by WiFS."
+              ? "Use your WiFS username or work email address."
               : "We will email you a secure reset link."}
           </p>
 
           <form onSubmit={mode === "login" ? handleLogin : handleReset} className="mt-8 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{mode === "login" ? "Username or email" : "Email"}</Label>
               <Input
                 id="email"
-                type="email"
-                autoComplete="email"
+                type={mode === "login" ? "text" : "email"}
+                autoCapitalize="none"
+                autoComplete={mode === "login" ? "username" : "email"}
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@wifsindia.com"
+                placeholder={mode === "login" ? "username or you@wifsindia.com" : "you@wifsindia.com"}
               />
             </div>
             {mode === "login" && (
