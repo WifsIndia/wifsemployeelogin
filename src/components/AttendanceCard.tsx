@@ -28,18 +28,19 @@ export function useTodayAttendance() {
   });
 }
 
-export function useActiveOffice() {
+/** The signed-in employee's authorized, active office locations. */
+export function useMyOffices() {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ["office-active"],
+    queryKey: ["my-offices", user?.id],
+    enabled: !!user,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("office_locations")
-        .select("*")
-        .eq("active", true)
-        .order("created_at")
-        .limit(1)
-        .maybeSingle();
-      return data;
+      const { data, error } = await supabase
+        .from("employee_locations")
+        .select("office:office_locations(id, name, latitude, longitude, radius_meters, active)")
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      return (data ?? []).map((r) => r.office).filter((o): o is NonNullable<typeof o> => !!o && o.active);
     },
   });
 }
@@ -53,7 +54,7 @@ interface LocState {
 export function AttendanceCard() {
   const qc = useQueryClient();
   const { data: row, isLoading } = useTodayAttendance();
-  const { data: office } = useActiveOffice();
+  const { data: offices } = useMyOffices();
   const [busy, setBusy] = useState<null | "in" | "out">(null);
   const [loc, setLoc] = useState<LocState | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +70,9 @@ export function AttendanceCard() {
     queryFn: async () => (await supabase.from("organization_settings").select("require_gps").maybeSingle()).data,
   });
   const gpsRequired = rules?.require_gps ?? true;
-  const configured = !gpsRequired || (office?.latitude != null && office?.longitude != null);
+  const located = (offices ?? []).filter((o) => o.latitude != null && o.longitude != null);
+  // While loading, don't block; the database makes the final decision.
+  const configured = !gpsRequired || offices === undefined || located.length > 0;
 
   const act = async (kind: "in" | "out") => {
     setError(null);
@@ -80,9 +83,16 @@ export function AttendanceCard() {
       catch (err) { if (gpsRequired) throw err; c = { latitude: null, longitude: null, accuracy: null }; }
       let distance: number | null = null;
       let inside: boolean | null = null;
-      if (c.latitude != null && c.longitude != null && office?.latitude != null && office?.longitude != null) {
-        distance = distanceMeters(c.latitude, c.longitude, office.latitude, office.longitude);
-        inside = distance <= office.radius_meters;
+      if (c.latitude != null && c.longitude != null && located.length) {
+        // Compare against every authorized location; use the closest one inside its radius, else the nearest.
+        const scored = located.map((o) => ({
+          d: distanceMeters(c.latitude!, c.longitude!, o.latitude!, o.longitude!),
+          r: o.radius_meters,
+        }));
+        const hit = scored.filter((s) => s.d <= s.r).sort((a, b) => a.d - b.d)[0];
+        const nearest = hit ?? scored.sort((a, b) => a.d - b.d)[0]!;
+        distance = nearest.d;
+        inside = !!hit;
       }
       if (c.accuracy != null) setLoc({ distance, accuracy: c.accuracy, inside });
       // The database performs the authoritative location, radius and accuracy checks.
