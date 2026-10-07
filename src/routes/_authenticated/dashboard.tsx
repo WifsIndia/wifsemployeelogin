@@ -168,7 +168,7 @@ function Dashboard() {
           <h2 className="mb-3 font-display text-xl font-bold">
             {primaryRole === "manager" ? "My team" : primaryRole === "hr" ? "HR overview" : "Organisation overview"}
           </h2>
-          <TeamOverview scope={primaryRole === "manager" ? "team" : "all"} variant={primaryRole} />
+          <TeamOverview scope={primaryRole === "manager" || primaryRole === "ado" ? "team" : "all"} variant={primaryRole === "manager" || primaryRole === "ado" ? "manager" : primaryRole === "hr" ? "hr" : "admin"} />
         </section>
       )}
     </div>

@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type AppRole } from "@/lib/auth";
 import { pageHead } from "@/lib/meta";
 import { createEmployee } from "@/lib/employees.functions";
+import { EmployeeEditDialog } from "@/components/EmployeeEditDialog";
 import { Empty, Loading, PageHeader, RequireRole, StatusPill } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,11 +104,9 @@ function Page() {
         </div>
       )}
       {edit && (
-        <EditDialog
+        <EmployeeEditDialog
           row={edit}
-          isAdmin={isAdmin}
-          depts={q.data?.depts ?? []}
-          managers={(q.data?.people ?? []).filter((p) => p.id !== edit.id && p.role !== "employee")}
+          people={q.data?.people ?? []}
           onClose={() => setEdit(null)}
           onSaved={() => { setEdit(null); qc.invalidateQueries({ queryKey: ["employees"] }); }}
         />
@@ -116,74 +115,6 @@ function Page() {
         <CreateDialog isAdmin={isAdmin} onClose={() => setCreating(false)} onSaved={() => { setCreating(false); qc.invalidateQueries({ queryKey: ["employees"] }); }} />
       )}
     </div>
-  );
-}
-
-function EditDialog({ row, isAdmin, depts, managers, onClose, onSaved }: {
-  row: Row & { role: AppRole }; isAdmin: boolean; depts: { id: string; name: string }[];
-  managers: { id: string; full_name: string }[]; onClose: () => void; onSaved: () => void;
-}) {
-  const [f, setF] = useState(row);
-  const [saving, setSaving] = useState(false);
-  const save = async () => {
-    setSaving(true);
-    const { error } = await supabase.from("profiles").update({
-      full_name: f.full_name.trim(), phone: f.phone || null, employee_code: f.employee_code || null,
-      designation: f.designation || null, department_id: f.department_id, manager_id: f.manager_id,
-      joining_date: f.joining_date || null, status: f.status,
-    }).eq("id", row.id);
-    if (!error && isAdmin && f.role !== row.role) {
-      await supabase.from("user_roles").delete().eq("user_id", row.id);
-      const r = await supabase.from("user_roles").insert({ user_id: row.id, role: f.role });
-      if (r.error) toast.error("Could not change role.");
-    }
-    setSaving(false);
-    if (error) return toast.error("Could not save employee.");
-    toast.success("Employee updated");
-    onSaved();
-  };
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader><DialogTitle>Edit employee</DialogTitle></DialogHeader>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="sm:col-span-2"><Label>Full name</Label><Input value={f.full_name} onChange={(e) => setF({ ...f, full_name: e.target.value })} /></div>
-          <div><Label>Employee code</Label><Input value={f.employee_code ?? ""} onChange={(e) => setF({ ...f, employee_code: e.target.value })} /></div>
-          <div><Label>Phone</Label><Input value={f.phone ?? ""} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
-          <div><Label>Designation</Label><Input value={f.designation ?? ""} onChange={(e) => setF({ ...f, designation: e.target.value })} /></div>
-          <div><Label>Joining date</Label><Input type="date" value={f.joining_date ?? ""} onChange={(e) => setF({ ...f, joining_date: e.target.value })} /></div>
-          <div>
-            <Label>Department</Label>
-            <Select value={f.department_id ?? NONE} onValueChange={(v) => setF({ ...f, department_id: v === NONE ? null : v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value={NONE}>None</SelectItem>{depts.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Reporting manager</Label>
-            <Select value={f.manager_id ?? NONE} onValueChange={(v) => setF({ ...f, manager_id: v === NONE ? null : v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value={NONE}>None</SelectItem>{managers.map((m) => <SelectItem key={m.id} value={m.id}>{m.full_name}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Status</Label>
-            <Select value={f.status} onValueChange={(v) => setF({ ...f, status: v as Row["status"] })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Role {!isAdmin && "(admin only)"}</Label>
-            <Select disabled={!isAdmin} value={f.role} onValueChange={(v) => setF({ ...f, role: v as AppRole })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{ROLES.map((r) => <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-        </div>
-        <Button onClick={save} disabled={saving}>Save changes</Button>
-      </DialogContent>
-    </Dialog>
   );
 }
 
