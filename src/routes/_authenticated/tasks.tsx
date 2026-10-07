@@ -110,10 +110,10 @@ function TasksPage() {
             <button
               key={t.id}
               onClick={() => setViewing(t)}
-              className="rounded-xl border border-border bg-card p-4 text-left transition-shadow hover:shadow-md"
+              className="min-w-0 rounded-xl border border-border bg-card p-4 text-left transition-shadow hover:shadow-md"
             >
-              <div className="flex items-start justify-between gap-2">
-                <p className="font-semibold">{t.title}</p>
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+                <p className="min-w-0 break-words font-semibold">{t.title}</p>
                 <StatusPill status={t.priority} />
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
@@ -122,7 +122,7 @@ function TasksPage() {
                 {t.due_date ? ` · due ${formatDate(t.due_date)}` : ""}
               </p>
               <div className="mt-3 flex items-center gap-3">
-                <Progress value={t.progress} className="h-2 flex-1" />
+                <Progress value={t.progress} className="h-2 min-w-0 flex-1" />
                 <span className="text-xs font-semibold">{t.progress}%</span>
                 <StatusPill status={t.status} />
               </div>
@@ -208,7 +208,7 @@ function TaskForm({ task, onClose }: { task: TaskRow | null; onClose: () => void
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{task ? "Edit task" : "New task"}</DialogTitle>
         </DialogHeader>
@@ -233,7 +233,7 @@ function TaskForm({ task, onClose }: { task: TaskRow | null; onClose: () => void
               </SelectContent>
             </Select>
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Project">
               <Select value={f.project_id || "none"} onValueChange={(v) => setF({ ...f, project_id: v === "none" ? "" : v })}>
                 <SelectTrigger>
@@ -365,13 +365,13 @@ function TaskDetail({ task, onClose, onEdit }: { task: TaskRow; onClose: () => v
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{task.title}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 text-sm">
           {task.description && <p className="whitespace-pre-wrap text-muted-foreground">{task.description}</p>}
-          <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
             <p>Assigned to: <b>{task.assignee?.full_name ?? "—"}</b></p>
             <p>Project: <b>{task.project?.name ?? "—"}</b></p>
             <p>Start: <b>{formatDate(task.start_date)}</b></p>
@@ -458,7 +458,7 @@ function TaskDetail({ task, onClose, onEdit }: { task: TaskRow; onClose: () => v
 
 export function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
+    <div className="min-w-0 space-y-1.5">
       <Label>{label}</Label>
       {children}
     </div>

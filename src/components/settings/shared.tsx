@@ -40,7 +40,7 @@ export function ConfirmDelete({ what, onConfirm, label }: { what: string; onConf
 
 export function Field({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
   return (
-    <div className={"space-y-1.5 " + (className ?? "")}>
+    <div className={"min-w-0 space-y-1.5 " + (className ?? "")}>
       <Label>{label}</Label>
       {children}
     </div>
@@ -51,14 +51,14 @@ export function NativeSelect(props: React.SelectHTMLAttributes<HTMLSelectElement
   return (
     <select
       {...props}
-      className={"h-9 w-full rounded-md border border-input bg-background px-2 text-sm " + (props.className ?? "")}
+      className={"h-11 w-full min-w-0 max-w-full rounded-md border border-input bg-background px-2 text-base sm:h-9 md:text-sm " + (props.className ?? "")}
     />
   );
 }
 
 export const tableCls = "w-full text-sm";
-export const thCls = "p-2 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground";
-export const tdCls = "p-2 border-t border-border";
+export const thCls = "whitespace-nowrap px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground";
+export const tdCls = "px-3 py-3 border-t border-border";
 
 export function money(n: number | string | null | undefined, currency = "INR") {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency, minimumFractionDigits: 2 }).format(Number(n ?? 0));

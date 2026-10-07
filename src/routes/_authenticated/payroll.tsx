@@ -83,7 +83,7 @@ function Page() {
     <div className="space-y-4">
       <PageHeader title="Payroll" description="Monthly salary calculation based on salary, joining date, leave policy, attendance and holidays." />
       <Panel title={(people.data?.length ?? 0) > 1 ? "Select" : "My payroll"}>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {(people.data?.length ?? 0) > 1 && <Field label="Employee">
             <NativeSelect value={emp} onChange={(e) => setEmp(e.target.value)}>
               {(people.data ?? []).map((p) => <option key={p.id} value={p.id}>{p.full_name}{p.employee_code ? ` (${p.employee_code})` : ""}</option>)}
@@ -91,7 +91,7 @@ function Page() {
           </Field>}
           <Field label="Month"><Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} /></Field>
           {canEdit && (
-            <div className="flex items-end gap-2">
+            <div className="flex min-w-0 flex-wrap items-end gap-2 md:col-span-2 xl:col-span-1">
               <Button onClick={generate} disabled={busy || !emp || rec?.status === "finalized"}>{rec ? "Recalculate" : "Calculate"}</Button>
               {rec?.status === "draft" && <Button variant="secondary" onClick={() => { if (window.confirm("Finalize this payroll? It can't be recalculated unless a Super Admin reopens it.")) setStatus("finalized"); }}>Finalize</Button>}
               {rec?.status === "finalized" && isSuper && <Button variant="outline" onClick={() => setStatus("draft")}>Reopen</Button>}
@@ -114,7 +114,7 @@ function Page() {
               ["Other deductions", `− ${m("other_deductions")}`],
               ["Total deductions", `− ${m("total_deductions")}`],
             ]} />
-            <div className="mt-3 flex justify-between rounded-lg bg-muted p-3 font-display text-lg font-semibold">
+            <div className="mt-3 grid min-w-0 gap-1 sm:grid-cols-[minmax(0,1fr)_auto] rounded-lg bg-muted p-3 font-display text-lg font-semibold">
               <span>Final payable</span><span>{m("net_salary")}</span>
             </div>
           </Panel>
@@ -153,7 +153,7 @@ function Page() {
 function Rows({ rows }: { rows: [string, string][] }) {
   return (
     <dl className="divide-y divide-border text-sm">
-      {rows.map(([k, v]) => <div key={k} className="flex justify-between gap-4 py-2"><dt className="text-muted-foreground">{k}</dt><dd className="font-medium">{v}</dd></div>)}
+      {rows.map(([k, v]) => <div key={k} className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 py-2"><dt className="min-w-0 break-words text-muted-foreground">{k}</dt><dd className="font-medium tabular-nums">{v}</dd></div>)}
     </dl>
   );
 }
