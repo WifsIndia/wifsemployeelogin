@@ -28,6 +28,30 @@ export function useTodayAttendance() {
   });
 }
 
+/** An open (not checked-out) session left over from the previous local day — closed by the next Check Out. */
+export function useOpenPreviousAttendance() {
+  const { user } = useAuth();
+  const today = todayISO();
+  const d = new Date(today + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() - 1);
+  const yesterday = d.toISOString().slice(0, 10);
+  return useQuery({
+    queryKey: ["attendance-today", "previous-open", user?.id, yesterday],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("attendance")
+        .select("*")
+        .eq("employee_id", user!.id)
+        .eq("attendance_date", yesterday)
+        .eq("status", "checked_in")
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 /** The signed-in employee's authorized, active office locations. */
 export function useMyOffices() {
   const { user } = useAuth();
@@ -54,7 +78,11 @@ interface LocState {
 
 export function AttendanceCard() {
   const qc = useQueryClient();
-  const { data: row, isLoading } = useTodayAttendance();
+  const { data: todayRow, isLoading } = useTodayAttendance();
+  const { data: prevOpen } = useOpenPreviousAttendance();
+  // Today's record when present; otherwise show (and allow closing) an overnight session from yesterday.
+  const overnight = !todayRow && !!prevOpen;
+  const row = todayRow ?? prevOpen ?? null;
   const { data: offices } = useMyOffices();
   const [busy, setBusy] = useState<null | "in" | "out">(null);
   const [loc, setLoc] = useState<LocState | null>(null);
@@ -140,6 +168,12 @@ export function AttendanceCard() {
             <Info label="Check-out" value={formatTime(row?.check_out_time)} />
             <Info label="Duration" value={duration(row?.check_in_time ?? null, row?.check_out_time ?? null)} />
           </div>
+          {overnight && (
+            <p className="mt-3 flex items-start gap-2 rounded-md bg-warning/15 p-3 text-sm">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+              You are still checked in from yesterday. Check out to close that session, then you can check in for today.
+            </p>
+          )}
           <p className="mt-3 text-sm text-muted-foreground">Status: <span className="font-medium text-foreground">{status}</span></p>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
