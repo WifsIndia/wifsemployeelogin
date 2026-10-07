@@ -1,8 +1,7 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Trash2 } from "lucide-react";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -14,9 +13,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
-export function ConfirmDelete({ what, onConfirm, label }: { what: string; onConfirm: () => void; label?: string }) {
+export function ConfirmDelete({ what, onConfirm, label }: { what: string; onConfirm: () => unknown; label?: string }) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  // Stay open (and locked) until the delete finishes, so it can't be sent twice.
+  const run = async () => {
+    setBusy(true);
+    try { await onConfirm(); setOpen(false); } finally { setBusy(false); }
+  };
   return (
-    <AlertDialog>
+    <AlertDialog open={open} onOpenChange={(o) => !busy && setOpen(o)}>
       <AlertDialogTrigger asChild>
         <Button variant="ghost" size="sm" className="text-destructive" aria-label={`Delete ${what}`}>
           <Trash2 className="size-4" /> {label}
@@ -28,10 +34,10 @@ export function ConfirmDelete({ what, onConfirm, label }: { what: string; onConf
           <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+          <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+          <Button variant="destructive" onClick={run} loading={busy} loadingText="Deleting…">
             Delete
-          </AlertDialogAction>
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
