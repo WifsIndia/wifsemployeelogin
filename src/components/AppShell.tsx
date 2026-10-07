@@ -44,7 +44,7 @@ const I = {
   reports: { to: "/reports", label: "Reports", icon: BarChart3 },
   notif: { to: "/notifications", label: "Notifications", icon: Bell },
   settings: { to: "/admin/settings/office-location", label: "Office Location", icon: MapPin },
-  org: { to: "/admin/settings", label: "Settings", icon: Settings },
+  org: { to: "/super-admin/settings", label: "Settings", icon: Settings },
   docs: { to: "/documents", label: "Documents", icon: FileText },
   profile: { to: "/profile", label: "Profile", icon: UserRound },
 } satisfies Record<string, NavItem>;
@@ -186,7 +186,7 @@ function SideLink({
   children?: ReactNode;
 }) {
   const Icon = item.icon;
-  const active = pathname === item.to || pathname === item.to + "/" || (item.to !== "/admin/settings" && pathname.startsWith(item.to + "/"));
+  const active = pathname === item.to || pathname === item.to + "/" || (pathname.startsWith(item.to + "/"));
   return (
     <Link
       to={item.to as "/dashboard"}

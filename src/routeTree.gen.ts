@@ -25,6 +25,7 @@ import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
 import { Route as AuthenticatedWorkLogRouteImport } from './routes/_authenticated/work-log'
 import { Route as AuthenticatedAdminEmployeesRouteImport } from './routes/_authenticated/admin.employees'
+import { Route as AuthenticatedSuperAdminSettingsRouteImport } from './routes/_authenticated/super-admin.settings'
 import { Route as AuthenticatedAdminSettingsOfficeLocationRouteImport } from './routes/_authenticated/admin.settings.office-location'
 
 const IndexRoute = IndexRouteImport.update({
@@ -109,6 +110,12 @@ const AuthenticatedAdminEmployeesRoute =
     path: '/admin/employees',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSuperAdminSettingsRoute =
+  AuthenticatedSuperAdminSettingsRouteImport.update({
+    id: '/super-admin/settings',
+    path: '/super-admin/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminSettingsOfficeLocationRoute =
   AuthenticatedAdminSettingsOfficeLocationRouteImport.update({
     id: '/admin/settings/office-location',
@@ -132,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/team': typeof AuthenticatedTeamRoute
   '/work-log': typeof AuthenticatedWorkLogRoute
   '/admin/employees': typeof AuthenticatedAdminEmployeesRoute
+  '/super-admin/settings': typeof AuthenticatedSuperAdminSettingsRoute
   '/admin/settings/office-location': typeof AuthenticatedAdminSettingsOfficeLocationRoute
 }
 export interface FileRoutesByTo {
@@ -150,6 +158,7 @@ export interface FileRoutesByTo {
   '/team': typeof AuthenticatedTeamRoute
   '/work-log': typeof AuthenticatedWorkLogRoute
   '/admin/employees': typeof AuthenticatedAdminEmployeesRoute
+  '/super-admin/settings': typeof AuthenticatedSuperAdminSettingsRoute
   '/admin/settings/office-location': typeof AuthenticatedAdminSettingsOfficeLocationRoute
 }
 export interface FileRoutesById {
@@ -170,6 +179,7 @@ export interface FileRoutesById {
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/_authenticated/work-log': typeof AuthenticatedWorkLogRoute
   '/_authenticated/admin/employees': typeof AuthenticatedAdminEmployeesRoute
+  '/_authenticated/super-admin/settings': typeof AuthenticatedSuperAdminSettingsRoute
   '/_authenticated/admin/settings/office-location': typeof AuthenticatedAdminSettingsOfficeLocationRoute
 }
 export interface FileRouteTypes {
@@ -190,6 +200,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/work-log'
     | '/admin/employees'
+    | '/super-admin/settings'
     | '/admin/settings/office-location'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -208,6 +219,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/work-log'
     | '/admin/employees'
+    | '/super-admin/settings'
     | '/admin/settings/office-location'
   id:
     | '__root__'
@@ -227,6 +239,7 @@ export interface FileRouteTypes {
     | '/_authenticated/team'
     | '/_authenticated/work-log'
     | '/_authenticated/admin/employees'
+    | '/_authenticated/super-admin/settings'
     | '/_authenticated/admin/settings/office-location'
   fileRoutesById: FileRoutesById
 }
@@ -351,6 +364,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminEmployeesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/super-admin/settings': {
+      id: '/_authenticated/super-admin/settings'
+      path: '/super-admin/settings'
+      fullPath: '/super-admin/settings'
+      preLoaderRoute: typeof AuthenticatedSuperAdminSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/settings/office-location': {
       id: '/_authenticated/admin/settings/office-location'
       path: '/admin/settings/office-location'
@@ -374,6 +394,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
   AuthenticatedWorkLogRoute: typeof AuthenticatedWorkLogRoute
   AuthenticatedAdminEmployeesRoute: typeof AuthenticatedAdminEmployeesRoute
+  AuthenticatedSuperAdminSettingsRoute: typeof AuthenticatedSuperAdminSettingsRoute
   AuthenticatedAdminSettingsOfficeLocationRoute: typeof AuthenticatedAdminSettingsOfficeLocationRoute
 }
 
@@ -390,6 +411,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,
   AuthenticatedWorkLogRoute: AuthenticatedWorkLogRoute,
   AuthenticatedAdminEmployeesRoute: AuthenticatedAdminEmployeesRoute,
+  AuthenticatedSuperAdminSettingsRoute: AuthenticatedSuperAdminSettingsRoute,
   AuthenticatedAdminSettingsOfficeLocationRoute:
     AuthenticatedAdminSettingsOfficeLocationRoute,
 }
