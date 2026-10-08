@@ -183,6 +183,13 @@
       "when": 1791446521764,
       "tag": "0025_attendance_sessions_task_reminders",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1791446758416,
+      "tag": "0026_super_admin_only_credentials",
+      "breakpoints": true
     }
   ]
 }
