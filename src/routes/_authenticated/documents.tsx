@@ -44,8 +44,7 @@ const fmtSize = (b: number) =>
 const typeOf = (d: DocRow) => (d.name.includes(".") ? d.name.split(".").pop()!.toUpperCase() : d.mime_type ?? "File");
 
 function Page() {
-  const { user, hasRole } = useAuth();
-  const canManagePeople = hasRole("super_admin", "admin", "hr");
+  const { user } = useAuth();
   const perm = usePermission("documents");
   const qc = useQueryClient();
   const [folderId, setFolderId] = useState<string | null>(null);
@@ -75,12 +74,6 @@ function Page() {
   const companies = useQuery({
     queryKey: ["companies-list"],
     queryFn: async () => (await supabase.from("companies").select("id, name").eq("active", true).order("name")).data ?? [],
-  });
-  const people = useQuery({
-    queryKey: ["doc-people", user?.id],
-    enabled: !!user && canManagePeople,
-    queryFn: async () =>
-      (await supabase.from("profiles").select("id, full_name, employee_code").eq("status", "active").order("full_name")).data ?? [],
   });
   // Personal employee documents live in the employee profile, not the shared listing.
   const ownerDocs = (docs.data ?? []).filter((d) => !d.employee_id);
