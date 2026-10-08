@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, NativeSelect } from "@/components/settings/shared";
+import { useServerFn } from "@tanstack/react-start";
+import { updateCredentials } from "@/lib/employees.functions";
 
 export const ASSIGNABLE_ROLES: AppRole[] = ["employee", "agent", "ado", "manager", "hr", "admin"];
 export const ROLE_ORDER: AppRole[] = ["super_admin", "admin", "hr", "manager", "ado", "agent", "employee"];
@@ -36,6 +38,8 @@ export function EmployeeEditDialog({ row, people, onClose, onSaved }: {
   const canPolicy = isSuper || (hasRole("admin", "hr") && !isSelf);
   const [comp, setComp] = useState({ basic_salary: 0, allowances: 0, deductions: 0, payment_mode: "bank", bank_name: "", account_holder: "", account_number: "", ifsc: "", upi_id: "", paid_leave_allowance: "", bond: "", employment_description: "" });
   const [saving, setSaving] = useState(false);
+  const [newPw, setNewPw] = useState("");
+  const setCreds = useServerFn(updateCredentials);
   const qc = useQueryClient();
 
   const meta = useQuery({
@@ -76,11 +80,20 @@ export function EmployeeEditDialog({ row, people, onClose, onSaved }: {
         designation: f.designation || null, department_id: f.department_id || null, manager_id: f.manager_id || null,
         joining_date: f.joining_date || null, status: f.status,
       };
-      const uname = (f.username ?? "").trim().toLowerCase();
-      if (uname !== (row.username ?? "")) {
+      // Sign-in details (username, email, password) are Super Admin only and go through the server.
+      if (isSuper) {
+        const uname = (f.username ?? "").trim().toLowerCase();
+        const email = f.email.trim().toLowerCase();
         if (!uname && row.username) throw new Error("Username cannot be removed once set.");
         if (uname && !/^[a-z0-9._-]{3,30}$/.test(uname)) throw new Error("Username must be 3–30 letters, numbers, dots, dashes or underscores.");
-        if (uname) upd.username = uname;
+        if (newPw && newPw.length < 8) throw new Error("Password must be at least 8 characters.");
+        const creds = {
+          id: row.id,
+          ...(uname && uname !== (row.username ?? "") ? { username: uname } : {}),
+          ...(email && email !== row.email.toLowerCase() ? { email } : {}),
+          ...(newPw ? { password: newPw } : {}),
+        };
+        if (Object.keys(creds).length > 1) await setCreds({ data: creds });
       }
       if (isSuper) { upd.location_id = f.location_id || null; upd.employment_type = f.employment_type || "full_time"; }
       if (canPolicy && (f.leave_policy_id ?? null) !== (row.leave_policy_id ?? null)) upd.leave_policy_id = f.leave_policy_id || null;
@@ -138,8 +151,13 @@ export function EmployeeEditDialog({ row, people, onClose, onSaved }: {
         <DialogHeader><DialogTitle>Edit employee</DialogTitle></DialogHeader>
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Full name" className="sm:col-span-2"><Input value={f.full_name} onChange={(e) => setF({ ...f, full_name: e.target.value })} /></Field>
-          <Field label="Username"><Input autoCapitalize="none" value={f.username ?? ""} onChange={(e) => setF({ ...f, username: e.target.value.toLowerCase() })} placeholder="Used to sign in" /></Field>
-          <Field label="Email"><Input value={f.email} disabled /></Field>
+          <Field label="Username"><Input autoCapitalize="none" disabled={!isSuper} value={f.username ?? ""} onChange={(e) => setF({ ...f, username: e.target.value.toLowerCase() })} placeholder="Used to sign in" /></Field>
+          <Field label="Email"><Input type="email" disabled={!isSuper} value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></Field>
+          {isSuper && (
+            <Field label="New password (leave blank to keep)" className="sm:col-span-2">
+              <Input type="text" autoComplete="new-password" value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder="At least 8 characters" />
+            </Field>
+          )}
           <Field label="Employee ID"><Input value={f.employee_code ?? ""} onChange={(e) => setF({ ...f, employee_code: e.target.value })} /></Field>
           <Field label="Phone"><Input value={f.phone ?? ""} onChange={(e) => setF({ ...f, phone: e.target.value })} /></Field>
           <Field label="Designation"><Input value={f.designation ?? ""} onChange={(e) => setF({ ...f, designation: e.target.value })} /></Field>

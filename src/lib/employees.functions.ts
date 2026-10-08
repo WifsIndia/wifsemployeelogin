@@ -55,3 +55,47 @@ export const deleteEmployee = createServerFn({ method: "POST" })
     await supabaseAdmin.auth.admin.updateUserById(data.id, { ban_duration: "876000h" });
     return { ok: true };
   });
+
+/** Super Admin only: change another user's sign-in email, username and/or password. */
+export const updateCredentials = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({
+      id: z.string().uuid(),
+      email: z.string().trim().toLowerCase().email().max(255).optional(),
+      username: z.string().trim().toLowerCase().regex(/^[a-z0-9._-]{3,30}$/, "Username must be 3–30 letters, numbers, dots, dashes or underscores.").optional(),
+      password: z.string().min(8, "Password must be at least 8 characters.").max(72).optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: isSuper } = await context.supabase.rpc("is_super_admin", { _user_id: context.userId });
+    if (!isSuper) throw new Error("Only Super Admin can change sign-in details.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.username) {
+      const { data: taken } = await supabaseAdmin.from("profiles").select("id").eq("username", data.username).neq("id", data.id).maybeSingle();
+      if (taken) throw new Error("That username is already taken.");
+    }
+    if (data.email) {
+      const { data: taken } = await supabaseAdmin.from("profiles").select("id").ilike("email", data.email).neq("id", data.id).maybeSingle();
+      if (taken) throw new Error("That email is already used by another account.");
+    }
+    if (data.email || data.password) {
+      const { error } = await supabaseAdmin.auth.admin.updateUserById(data.id, {
+        ...(data.email ? { email: data.email, email_confirm: true } : {}),
+        ...(data.password ? { password: data.password } : {}),
+      });
+      if (error) throw new Error(error.message);
+    }
+    const upd: { email?: string; username?: string } = {};
+    if (data.email) upd.email = data.email;
+    if (data.username) upd.username = data.username;
+    if (Object.keys(upd).length) {
+      const { error } = await supabaseAdmin.from("profiles").update(upd).eq("id", data.id);
+      if (error) throw new Error("Could not save sign-in details.");
+    }
+    await supabaseAdmin.from("audit_logs").insert({
+      actor_id: context.userId, action: "credentials_changed", entity: "profiles", entity_id: data.id,
+      details: { email: !!data.email, username: !!data.username, password: !!data.password },
+    });
+    return { ok: true };
+  });

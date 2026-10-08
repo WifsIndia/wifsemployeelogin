@@ -8,6 +8,7 @@ import { pageHead } from "@/lib/meta";
 import { formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/AppShell";
 import { Panel } from "@/components/TeamOverview";
+import { PersonalDocuments } from "@/components/PersonalDocuments";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -97,7 +98,7 @@ function Page() {
     { to: "/leave", label: "Leave & balance" },
     { to: "/tasks", label: "My tasks" },
     { to: "/work-log", label: "Daily work" },
-    ...(extra.data?.docs ? [{ to: "/documents", label: "Documents" }] : []),
+    ...(extra.data?.docs ? [{ to: "/documents", label: "Shared documents" }] : []),
     ...(extra.data?.payroll ? [{ to: "/payroll", label: "My payroll" }] : []),
   ];
 
@@ -122,7 +123,7 @@ function Page() {
             </div>
           ))}
         </dl>
-        <p className="mt-3 text-xs text-muted-foreground">Contact HR to change official details.</p>
+        <p className="mt-3 text-xs text-muted-foreground">Contact HR to change official details. Sign-in details (email, username, password) can only be changed by Super Admin.</p>
       </Panel>
       <Panel title="Personal information">
         <div className="grid gap-3 sm:grid-cols-2">
@@ -131,12 +132,17 @@ function Page() {
         </div>
         <Button className="mt-4" onClick={save}>Save</Button>
       </Panel>
-      <Panel title="Change password">
+      {profile && (
+        <Panel title="My documents">
+          <PersonalDocuments employeeId={profile.id} />
+        </Panel>
+      )}
+      {roles.includes("super_admin") && <Panel title="Change password">
         <div className="flex flex-wrap gap-3">
           <Input type="password" className="max-w-xs" placeholder="New password" value={pw} onChange={(e) => setPw(e.target.value)} />
           <Button variant="outline" onClick={changePw}>Update password</Button>
         </div>
-      </Panel>
+      </Panel>}
     </div>
   );
 }
