@@ -6,7 +6,10 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type AppRole } from "@/lib/auth";
 import { pageHead } from "@/lib/meta";
-import { createEmployee } from "@/lib/employees.functions";
+import { createEmployee, deleteEmployee } from "@/lib/employees.functions";
+import { EmployeeProfileDialog } from "@/components/EmployeeProfileDialog";
+import { ConfirmDelete } from "@/components/settings/shared";
+import { usePermission } from "@/lib/permissions";
 import { EmployeeEditDialog } from "@/components/EmployeeEditDialog";
 import { Empty, Loading, PageHeader, RequireModule, RequireRole, StatusPill } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -40,12 +43,25 @@ function Page() {
   const [search, setSearch] = useState("");
   const [edit, setEdit] = useState<(Row & { role: AppRole }) | null>(null);
   const [creating, setCreating] = useState(false);
+  const [viewing, setViewing] = useState<(Row & { role: AppRole }) | null>(null);
+  const { user } = useAuth();
+  const canDelete = usePermission("employees").delete;
+  const del = useServerFn(deleteEmployee);
+  const remove = async (id: string) => {
+    try {
+      await del({ data: { id } });
+      toast.success("Employee deleted");
+      qc.invalidateQueries({ queryKey: ["employees"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not delete employee.");
+    }
+  };
 
   const q = useQuery({
     queryKey: ["employees"],
     queryFn: async () => {
       const [p, r, d] = await Promise.all([
-        supabase.from("profiles").select("*").order("full_name"),
+        supabase.from("profiles").select("*").is("deleted_at", null).order("full_name"),
         supabase.from("user_roles").select("user_id, role"),
         supabase.from("departments").select("id, name").order("name"),
       ]);
@@ -96,7 +112,13 @@ function Page() {
                   <td className="p-3">{deptName(p.department_id)}</td>
                   <td className="p-3 capitalize">{p.role}</td>
                   <td className="p-3"><StatusPill status={p.status} /></td>
-                  <td className="p-3 text-right"><Button size="sm" variant="outline" onClick={() => setEdit(p)}>Edit</Button></td>
+                  <td className="p-3 text-right"><div className="flex justify-end gap-1 whitespace-nowrap">
+                    <Button size="sm" variant="ghost" onClick={() => setViewing(p)}>View profile</Button>
+                    <Button size="sm" variant="outline" onClick={() => setEdit(p)}>Edit</Button>
+                    {canDelete && p.id !== user?.id && p.role !== "super_admin" && (
+                      <ConfirmDelete what={p.full_name || p.email} onConfirm={() => remove(p.id)} />
+                    )}
+                  </div></td>
                 </tr>
               ))}
             </tbody>
@@ -111,6 +133,7 @@ function Page() {
           onSaved={() => { setEdit(null); qc.invalidateQueries({ queryKey: ["employees"] }); }}
         />
       )}
+      {viewing && <EmployeeProfileDialog row={viewing} deptName={deptName(viewing.department_id)} managerName={q.data?.people.find((x) => x.id === viewing.manager_id)?.full_name ?? "—"} onClose={() => setViewing(null)} />}
       {creating && (
         <CreateDialog isAdmin={isAdmin} onClose={() => setCreating(false)} onSaved={() => { setCreating(false); qc.invalidateQueries({ queryKey: ["employees"] }); }} />
       )}
