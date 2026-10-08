@@ -40,6 +40,8 @@ function AttendancePage() {
         .gte("attendance_date", start)
         .lte("attendance_date", end)
         .order("attendance_date", { ascending: false })
+        .order("employee_id")
+        .order("check_in_time", { ascending: true })
         .limit(1000);
       if (who === "me") q = q.eq("employee_id", user!.id);
       else q = q.neq("employee_id", user!.id);
@@ -60,8 +62,17 @@ function AttendancePage() {
         CheckOut: formatTime(r.check_out_time),
         Duration: duration(r.check_in_time, r.check_out_time),
         Status: r.status,
+        Note: r.auto_checked_out ? "Auto checked out — no logout recorded" : "",
       })),
     );
+
+  // Completed minutes per employee per day, across all sessions.
+  const dayTotal = new Map<string, number>();
+  for (const r of data ?? []) {
+    const k = `${r.employee_id}|${r.attendance_date}`;
+    dayTotal.set(k, (dayTotal.get(k) ?? 0) + (r.worked_minutes ?? 0));
+  }
+  const fmtMin = (m: number) => `${Math.floor(m / 60)}h ${m % 60}m`;
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -121,22 +132,39 @@ function AttendancePage() {
                   <TableHead>Check-in</TableHead>
                   <TableHead>Check-out</TableHead>
                   <TableHead>Duration</TableHead>
+                  <TableHead>Day total</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.map((r) => (
-                  <TableRow key={r.id}>
-                    {who === "team" && <TableCell className="font-medium">{r.employee?.full_name}</TableCell>}
-                    <TableCell>{formatDate(r.attendance_date)}</TableCell>
-                    <TableCell>{formatTime(r.check_in_time)}</TableCell>
-                    <TableCell>{formatTime(r.check_out_time)}</TableCell>
-                    <TableCell>{duration(r.check_in_time, r.check_out_time)}</TableCell>
-                    <TableCell>
-                      <StatusPill status={r.status} />
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {data.map((r, i) => {
+                  const prev = data[i - 1];
+                  const newDate = !prev || prev.attendance_date !== r.attendance_date;
+                  const firstOfGroup = newDate || prev.employee_id !== r.employee_id;
+                  return [
+                    newDate && (
+                      <TableRow key={`d-${r.attendance_date}`} className="bg-muted/50 hover:bg-muted/50">
+                        <TableCell colSpan={who === "team" ? 7 : 6} className="py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          {formatDate(r.attendance_date)}
+                        </TableCell>
+                      </TableRow>
+                    ),
+                    <TableRow key={r.id}>
+                      {who === "team" && <TableCell className="font-medium">{firstOfGroup ? r.employee?.full_name : ""}</TableCell>}
+                      <TableCell>{firstOfGroup ? formatDate(r.attendance_date) : ""}</TableCell>
+                      <TableCell>{formatTime(r.check_in_time)}</TableCell>
+                      <TableCell>
+                        {formatTime(r.check_out_time)}
+                        {r.auto_checked_out && <p className="text-xs text-warning-foreground">Auto checked out — no logout recorded</p>}
+                      </TableCell>
+                      <TableCell>{duration(r.check_in_time, r.check_out_time)}</TableCell>
+                      <TableCell className="font-medium">{firstOfGroup ? fmtMin(dayTotal.get(`${r.employee_id}|${r.attendance_date}`) ?? 0) : ""}</TableCell>
+                      <TableCell>
+                        <StatusPill status={r.status} />
+                      </TableCell>
+                    </TableRow>,
+                  ];
+                })}
               </TableBody>
             </Table>
           </div>
