@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePermissions } from "@/lib/permissions";
+import { PersonalDocuments } from "@/components/PersonalDocuments";
 import { formatDate } from "@/lib/format";
 import { Loading, StatusPill } from "@/components/AppShell";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -115,17 +116,7 @@ export function EmployeeProfileDialog({ row, deptName, managerName, onClose }: {
             )}
             {d.docs && (
               <Section title="Personal documents">
-                {d.docs.length === 0 ? <p className="text-sm text-muted-foreground">No personal documents.</p> : (
-                  <ul className="divide-y divide-border text-sm">
-                    {d.docs.map((x) => (
-                      <li key={x.id} className="flex items-center justify-between gap-2 py-2">
-                        <span className="min-w-0 truncate">{x.name}</span>
-                        <span className="shrink-0 text-xs text-muted-foreground">{formatDate(x.created_at)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <p className="text-xs text-muted-foreground">Open, download or manage these on the Documents page.</p>
+                <PersonalDocuments employeeId={row.id} />
               </Section>
             )}
           </div>

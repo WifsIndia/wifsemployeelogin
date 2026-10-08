@@ -46,7 +46,6 @@ const typeOf = (d: DocRow) => (d.name.includes(".") ? d.name.split(".").pop()!.t
 function Page() {
   const { user, hasRole } = useAuth();
   const canManagePeople = hasRole("super_admin", "admin", "hr");
-  const [owner, setOwner] = useState("");
   const perm = usePermission("documents");
   const qc = useQueryClient();
   const [folderId, setFolderId] = useState<string | null>(null);
@@ -83,9 +82,9 @@ function Page() {
     queryFn: async () =>
       (await supabase.from("profiles").select("id, full_name, employee_code").eq("status", "active").order("full_name")).data ?? [],
   });
-  const ownerDocs = (docs.data ?? []).filter((d) => (owner ? d.employee_id === owner : !d.employee_id));
-  const hasOwn = (docs.data ?? []).some((d) => d.employee_id === user?.id);
-  const canUploadHere = perm.create && (!owner || canManagePeople);
+  // Personal employee documents live in the employee profile, not the shared listing.
+  const ownerDocs = (docs.data ?? []).filter((d) => !d.employee_id);
+  const canUploadHere = perm.create;
   const companyName = (id: string | null) => (id ? companies.data?.find((c) => c.id === id)?.name ?? "Company" : "All staff");
 
   const refresh = () => {
@@ -130,7 +129,7 @@ function Page() {
         size_bytes: file.size,
         folder_id: folderId,
         company_id: company,
-        employee_id: owner || null,
+        employee_id: null,
         uploaded_by: user.id,
       });
       if (error) {
@@ -195,22 +194,6 @@ function Page() {
         }
       />
 
-      {(canManagePeople || hasOwn) && (
-        <select
-          className="h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-base sm:h-9 md:text-sm"
-          value={owner}
-          onChange={(e) => setOwner(e.target.value)}
-          aria-label="Whose documents"
-        >
-          <option value="">Shared documents</option>
-          {user && <option value={user.id}>My personal documents</option>}
-          {(people.data ?? []).filter((p) => p.id !== user?.id).map((p) => (
-            <option key={p.id} value={p.id}>
-              Personal: {p.full_name}{p.employee_code ? ` (${p.employee_code})` : ""}
-            </option>
-          ))}
-        </select>
-      )}
 
       <div className="grid min-w-0 gap-3 sm:grid-cols-2">
         <div className="relative min-w-0">
