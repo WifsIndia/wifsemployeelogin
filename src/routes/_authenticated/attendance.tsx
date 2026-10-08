@@ -155,7 +155,7 @@ function AttendancePage() {
                       <TableCell>{formatTime(r.check_in_time)}</TableCell>
                       <TableCell>
                         {formatTime(r.check_out_time)}
-                        {r.auto_checked_out && <p className="text-xs text-warning-foreground">Auto checked out — no logout recorded</p>}
+                        {r.auto_checked_out && <p className="text-xs italic text-muted-foreground">Auto checked out — no logout recorded</p>}
                       </TableCell>
                       <TableCell>{duration(r.check_in_time, r.check_out_time)}</TableCell>
                       <TableCell className="font-medium">{firstOfGroup ? fmtMin(dayTotal.get(`${r.employee_id}|${r.attendance_date}`) ?? 0) : ""}</TableCell>
