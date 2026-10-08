@@ -987,6 +987,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           custom_role_id: string | null
+          deleted_at: string | null
           department_id: string | null
           designation: string | null
           email: string
@@ -1007,6 +1008,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           custom_role_id?: string | null
+          deleted_at?: string | null
           department_id?: string | null
           designation?: string | null
           email?: string
@@ -1027,6 +1029,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           custom_role_id?: string | null
+          deleted_at?: string | null
           department_id?: string | null
           designation?: string | null
           email?: string
@@ -1539,6 +1542,7 @@ export type Database = {
         }
       }
       compute_payroll: { Args: { _emp: string; _month: string }; Returns: Json }
+      delete_employee: { Args: { _emp: string }; Returns: undefined }
       distance_meters: {
         Args: { lat1: number; lat2: number; lon1: number; lon2: number }
         Returns: number
