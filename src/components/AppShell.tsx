@@ -100,7 +100,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       const { count } = await supabase
         .from("notifications")
         .select("id", { count: "exact", head: true })
-        .eq("read", false);
+        .eq("read", false).or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
       return count ?? 0;
     },
   });
