@@ -9,6 +9,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/auth";
 import { usePermission } from "@/lib/permissions";
 import { pageHead } from "@/lib/meta";
+import { todayISO } from "@/lib/format";
 import { formatDate } from "@/lib/format";
 import { Empty, Loading, PageHeader, StatusPill } from "@/components/AppShell";
 import { useScopedPeople } from "@/components/TeamOverview";
@@ -18,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { NativeSelect } from "@/components/settings/shared";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
@@ -56,6 +58,9 @@ function TasksPage() {
   const [mineOnly, setMineOnly] = useState(!canManage);
   const [editing, setEditing] = useState<TaskRow | "new" | null>(null);
   const [viewing, setViewing] = useState<TaskRow | null>(null);
+  const [emp, setEmp] = useState("");
+  const canFilterEmp = hasRole("admin", "hr", "manager");
+  const today = todayISO();
 
   const { data, isLoading } = useQuery({
     queryKey: ["tasks", user?.id, mineOnly],
@@ -64,6 +69,7 @@ function TasksPage() {
       let q = supabase
         .from("tasks")
         .select("*, assignee:profiles!tasks_assignee_id_fkey(full_name), project:projects(name)")
+        .order("due_date", { ascending: true, nullsFirst: false })
         .order("created_at", { ascending: false });
       if (mineOnly) q = q.eq("assignee_id", user!.id);
       const { data, error } = await q;
@@ -72,7 +78,12 @@ function TasksPage() {
     },
   });
 
-  const rows = (data ?? []).filter((t) => filter === "ALL" || t.status === filter);
+  const isOpen = (t: TaskRow) => t.status !== "COMPLETED" && t.status !== "CANCELLED";
+  const isOverdue = (t: TaskRow) => !!t.due_date && t.due_date < today && isOpen(t);
+  // Employees come from tasks the viewer can already see, so the list stays inside their permitted scope.
+  const assignees = Array.from(new Map((data ?? []).map((t) => [t.assignee_id, t.assignee?.full_name ?? "—"])).entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  const rows = (data ?? []).filter((t) => (filter === "ALL" || t.status === filter) && (!emp || t.assignee_id === emp));
+  const overdueCount = rows.filter(isOverdue).length;
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -93,12 +104,21 @@ function TasksPage() {
             {s === "ALL" ? "All" : label(s)}
           </Button>
         ))}
+        {canFilterEmp && !mineOnly && (
+          <NativeSelect aria-label="Filter by employee" value={emp} onChange={(e) => setEmp(e.target.value)} className="w-full sm:w-56">
+            <option value="">All employees</option>
+            {assignees.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+          </NativeSelect>
+        )}
         {canManage && (
           <Button size="sm" variant="ghost" className="ml-auto" onClick={() => setMineOnly((v) => !v)}>
             {mineOnly ? "Show all tasks I can see" : "Show only mine"}
           </Button>
         )}
       </div>
+      {overdueCount > 0 && (
+        <p className="mb-3 rounded-md bg-destructive/10 p-3 text-sm text-destructive">{overdueCount} overdue task{overdueCount > 1 ? "s" : ""} — past the due date and still open.</p>
+      )}
       {isLoading ? (
         <Loading />
       ) : rows.length === 0 ? (
@@ -111,7 +131,7 @@ function TasksPage() {
             <button
               key={t.id}
               onClick={() => setViewing(t)}
-              className="min-w-0 rounded-xl border border-border bg-card p-4 text-left transition-shadow hover:shadow-md"
+              className={`min-w-0 rounded-xl border bg-card p-4 text-left transition-shadow hover:shadow-md ${isOverdue(t) ? "border-destructive" : "border-border"}`}
             >
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
                 <p className="min-w-0 break-words font-semibold">{t.title}</p>
@@ -122,6 +142,7 @@ function TasksPage() {
                 {t.project?.name ? ` · ${t.project.name}` : ""}
                 {t.due_date ? ` · due ${formatDate(t.due_date)}` : ""}
               </p>
+              {isOverdue(t) && <p className="mt-1 text-xs font-semibold text-destructive">Overdue</p>}
               <div className="mt-3 flex items-center gap-3">
                 <Progress value={t.progress} className="h-2 min-w-0 flex-1" />
                 <span className="text-xs font-semibold">{t.progress}%</span>

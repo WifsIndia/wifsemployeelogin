@@ -55,6 +55,7 @@ export type Database = {
       attendance: {
         Row: {
           attendance_date: string
+          auto_checked_out: boolean
           check_in_accuracy: number | null
           check_in_latitude: number | null
           check_in_longitude: number | null
@@ -77,6 +78,7 @@ export type Database = {
         }
         Insert: {
           attendance_date?: string
+          auto_checked_out?: boolean
           check_in_accuracy?: number | null
           check_in_latitude?: number | null
           check_in_longitude?: number | null
@@ -99,6 +101,7 @@ export type Database = {
         }
         Update: {
           attendance_date?: string
+          auto_checked_out?: boolean
           check_in_accuracy?: number | null
           check_in_latitude?: number | null
           check_in_longitude?: number | null
@@ -731,27 +734,33 @@ export type Database = {
         Row: {
           body: string | null
           created_at: string
+          expires_at: string | null
           id: string
           link: string | null
           read: boolean
+          reminder_key: string | null
           title: string
           user_id: string
         }
         Insert: {
           body?: string | null
           created_at?: string
+          expires_at?: string | null
           id?: string
           link?: string | null
           read?: boolean
+          reminder_key?: string | null
           title: string
           user_id: string
         }
         Update: {
           body?: string | null
           created_at?: string
+          expires_at?: string | null
           id?: string
           link?: string | null
           read?: boolean
+          reminder_key?: string | null
           title?: string
           user_id?: string
         }
@@ -1445,6 +1454,7 @@ export type Database = {
           office_id: string
         }[]
       }
+      auto_close_open_attendance: { Args: { _uid?: string }; Returns: number }
       calculate_payroll: { Args: { _month: string }; Returns: Json[] }
       calculate_salary: {
         Args: { _employee: string; _month: string }
@@ -1483,6 +1493,7 @@ export type Database = {
         Args: { _accuracy: number; _lat: number; _lon: number }
         Returns: {
           attendance_date: string
+          auto_checked_out: boolean
           check_in_accuracy: number | null
           check_in_latitude: number | null
           check_in_longitude: number | null
@@ -1514,6 +1525,7 @@ export type Database = {
         Args: { _accuracy: number; _lat: number; _lon: number }
         Returns: {
           attendance_date: string
+          auto_checked_out: boolean
           check_in_accuracy: number | null
           check_in_latitude: number | null
           check_in_longitude: number | null
@@ -1627,6 +1639,7 @@ export type Database = {
           module: string
         }[]
       }
+      send_overdue_task_reminders: { Args: never; Returns: number }
       set_payroll_status: {
         Args: { _id: string; _status: string }
         Returns: {

@@ -46,7 +46,7 @@ function Dashboard() {
           .limit(3),
         supabase
           .from("notifications")
-          .select("id, title, body, read, created_at")
+          .select("id, title, body, read, created_at").or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
           .eq("user_id", uid!)
           .order("created_at", { ascending: false })
           .limit(5),

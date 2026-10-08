@@ -21,7 +21,7 @@ function Page() {
     queryKey: ["notifications", user?.id],
     enabled: !!user,
     queryFn: async () =>
-      (await supabase.from("notifications").select("*").eq("user_id", user!.id).order("created_at", { ascending: false }).limit(100)).data ?? [],
+      (await supabase.from("notifications").select("*").eq("user_id", user!.id).or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).order("created_at", { ascending: false }).limit(100)).data ?? [],
   });
 
   const refresh = () => {
