@@ -16,4 +16,5 @@
 - Processing/locking state for actions lives in the shared Button (async onClick → spinner, disabled, no repeat), Switch, Dialog (can't close mid-request) and ConfirmDelete; pages must return the promise from their handlers instead of adding per-page busy flags.
 - Menu items and page gates come from `my_permissions` View flags via `usePermissions`/`RequireModule` (Super Admin always passes); never hard-code modules per role — Roles & Permissions must drive every portal while RLS stays the enforcement.
 - Leave rules (types, balances, notice, half-day, working days) read the employee's assigned `leave_policy_id` policy; the legacy `leave_policies` table is used only when no policy is assigned.
-- `check_out` closes today's open session or, failing that, the previous local day's open session — overnight shifts never create a second record.
+- Each `attendance` row is one session (many per day, at most one open); sessions left open past midnight are closed by `auto_close_open_attendance` at that day's office end and flagged `auto_checked_out` — keeps one source for day totals and payroll.
+- Timed reminders are SQL functions run by pg_cron that insert into `notifications` with `expires_at` and a unique `reminder_key` — no duplicate notification system and no resends.
