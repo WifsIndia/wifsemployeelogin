@@ -42,3 +42,16 @@ export const createEmployee = createServerFn({ method: "POST" })
     });
     return { id: uid };
   });
+
+export const deleteEmployee = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    // Permission, self and Super Admin checks are enforced by the database function.
+    const { error } = await context.supabase.rpc("delete_employee", { _emp: data.id });
+    if (error) throw new Error(error.message);
+    // Block future sign-in; the account and history records are kept.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.auth.admin.updateUserById(data.id, { ban_duration: "876000h" });
+    return { ok: true };
+  });
