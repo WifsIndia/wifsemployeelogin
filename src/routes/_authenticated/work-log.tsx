@@ -7,7 +7,8 @@ import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { daysAgoISO, pageHead } from "@/lib/meta";
-import { formatDate, todayISO } from "@/lib/format";
+import { formatDate, formatTime, todayISO } from "@/lib/format";
+import { NativeSelect } from "@/components/settings/shared";
 import { Empty, Loading, PageHeader } from "@/components/AppShell";
 import { Panel } from "@/components/TeamOverview";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,9 @@ function WorkLogPage() {
   const qc = useQueryClient();
   const today = todayISO();
   const canSeeTeam = hasRole("admin", "hr", "manager", "ado");
-  const [tab, setTab] = useState<"mine" | "team">("mine");
+  const [tab, setTab] = useState<"mine" | "team" | "diary">("mine");
+  const [emp, setEmp] = useState("");
+  const [diaryEmp, setDiaryEmp] = useState("");
   const [from, setFrom] = useState(daysAgoISO(7));
 
   const mine = useQuery({
@@ -52,8 +55,31 @@ function WorkLogPage() {
           .select("*, task:tasks(title), employee:profiles!daily_work_logs_employee_id_fkey(full_name)")
           .neq("employee_id", user!.id)
           .gte("log_date", from)
+          .order("employee_id")
           .order("log_date", { ascending: false })
           .limit(300)
+      ).data ?? [],
+  });
+
+  // Team members the viewer can already see (database-scoped), for the employee filters.
+  const teamPeople = useQuery({
+    queryKey: ["work-logs", "people", user?.id],
+    enabled: !!user && canSeeTeam && tab !== "mine",
+    queryFn: async () =>
+      (await supabase.from("profiles").select("id, full_name").neq("id", user!.id).is("deleted_at", null).order("full_name")).data ?? [],
+  });
+  const diaryId = diaryEmp || user?.id;
+  const diary = useQuery({
+    queryKey: ["work-logs", "diary", diaryId],
+    enabled: !!diaryId && tab === "diary",
+    queryFn: async () =>
+      (
+        await supabase
+          .from("daily_work_logs")
+          .select("*, task:tasks(title)")
+          .eq("employee_id", diaryId!)
+          .order("log_date", { ascending: true })
+          .limit(1000)
       ).data ?? [],
   });
 
@@ -118,13 +144,18 @@ function WorkLogPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <PageHeader title="Daily Work" description="Summarise your work each day. You can edit today's log until the day ends." />
-      {canSeeTeam && (
-        <div className="flex gap-2">
+      {(
+        <div className="flex flex-wrap gap-2">
           <Button size="sm" variant={tab === "mine" ? "default" : "outline"} onClick={() => setTab("mine")}>
             My logs
           </Button>
-          <Button size="sm" variant={tab === "team" ? "default" : "outline"} onClick={() => setTab("team")}>
-            {hasRole("admin", "hr") ? "All employees" : "My team"}
+          {canSeeTeam && (
+            <Button size="sm" variant={tab === "team" ? "default" : "outline"} onClick={() => setTab("team")}>
+              {hasRole("admin", "hr") ? "All employees" : "My team"}
+            </Button>
+          )}
+          <Button size="sm" variant={tab === "diary" ? "default" : "outline"} onClick={() => setTab("diary")}>
+            Diary
           </Button>
         </div>
       )}
@@ -188,12 +219,38 @@ function WorkLogPage() {
             </div>
           </Panel>
           <Panel title="Previous logs">
-            {mine.isLoading ? <Loading /> : <LogList logs={(mine.data ?? []).filter((l) => l.log_date !== logDate)} />}
+            {mine.isLoading ? <Loading /> : <LogList grouped logs={(mine.data ?? []).filter((l) => l.log_date !== logDate)} />}
           </Panel>
         </>
+      ) : tab === "team" ? (
+        <Panel
+          title="Team work logs"
+          action={
+            <div className="flex flex-wrap gap-2">
+              <NativeSelect aria-label="Filter by employee" value={emp} onChange={(e) => setEmp(e.target.value)} className="w-full sm:w-48">
+                <option value="">All employees</option>
+                {(teamPeople.data ?? []).map((p) => <option key={p.id} value={p.id}>{p.full_name}</option>)}
+              </NativeSelect>
+              <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-auto" />
+            </div>
+          }
+        >
+          {team.isLoading ? <Loading /> : <LogList grouped logs={(team.data ?? []).filter((l) => !emp || l.employee_id === emp)} showName />}
+        </Panel>
       ) : (
-        <Panel title="Team work logs" action={<Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-auto" />}>
-          {team.isLoading ? <Loading /> : <LogList logs={team.data ?? []} showName />}
+        <Panel
+          title="Diary"
+          action={
+            canSeeTeam && (
+              <NativeSelect aria-label="Employee" value={diaryEmp} onChange={(e) => setDiaryEmp(e.target.value)} className="w-full sm:w-56">
+                <option value="">Me</option>
+                {(teamPeople.data ?? []).map((p) => <option key={p.id} value={p.id}>{p.full_name}</option>)}
+              </NativeSelect>
+            )
+          }
+        >
+          <p className="mb-2 text-xs text-muted-foreground">Work entries in date order, oldest first.</p>
+          {diary.isLoading ? <Loading /> : <LogList grouped logs={diary.data ?? []} />}
         </Panel>
       )}
     </div>
@@ -203,6 +260,9 @@ function WorkLogPage() {
 interface Log {
   id: string;
   log_date: string;
+  employee_id?: string;
+  created_at?: string;
+  updated_at?: string;
   summary: string;
   work_completed: string | null;
   hours_worked: number | null;
@@ -212,12 +272,15 @@ interface Log {
   task?: { title: string } | null;
 }
 
-function LogList({ logs, showName }: { logs: Log[]; showName?: boolean }) {
+function LogList({ logs, showName, grouped }: { logs: Log[]; showName?: boolean; grouped?: boolean }) {
   if (!logs.length) return <Empty>No work logs found.</Empty>;
   return (
     <ul className="divide-y divide-border">
-      {logs.map((l) => (
+      {logs.map((l, i) => (
         <li key={l.id} className="py-3 text-sm">
+          {grouped && logs[i - 1]?.log_date !== l.log_date && (
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">{formatDate(l.log_date)}</p>
+          )}
           <div className="flex flex-wrap justify-between gap-2">
             <p className="font-semibold">
               {showName && `${l.employee?.full_name ?? "—"} · `}
@@ -237,6 +300,12 @@ function LogList({ logs, showName }: { logs: Log[]; showName?: boolean }) {
             </p>
           )}
           {l.notes && <p className="mt-1 text-xs italic text-muted-foreground">{l.notes}</p>}
+          {l.created_at && (
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Saved {formatDate(l.created_at)} {formatTime(l.created_at)}
+              {l.updated_at && new Date(l.updated_at).getTime() - new Date(l.created_at).getTime() > 60000 && ` · updated ${formatDate(l.updated_at)} ${formatTime(l.updated_at)}`}
+            </p>
+          )}
         </li>
       ))}
     </ul>
