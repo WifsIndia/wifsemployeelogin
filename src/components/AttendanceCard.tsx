@@ -9,6 +9,7 @@ import { duration, formatTime, todayISO } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/AppShell";
 
+/** All of today's check-in/check-out sessions for the signed-in employee, oldest first. */
 export function useTodayAttendance() {
   const { user } = useAuth();
   const today = todayISO();
@@ -21,33 +22,9 @@ export function useTodayAttendance() {
         .select("*")
         .eq("employee_id", user!.id)
         .eq("attendance_date", today)
-        .maybeSingle();
+        .order("check_in_time", { ascending: true });
       if (error) throw error;
-      return data;
-    },
-  });
-}
-
-/** An open (not checked-out) session left over from the previous local day — closed by the next Check Out. */
-export function useOpenPreviousAttendance() {
-  const { user } = useAuth();
-  const today = todayISO();
-  const d = new Date(today + "T00:00:00Z");
-  d.setUTCDate(d.getUTCDate() - 1);
-  const yesterday = d.toISOString().slice(0, 10);
-  return useQuery({
-    queryKey: ["attendance-today", "previous-open", user?.id, yesterday],
-    enabled: !!user,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("attendance")
-        .select("*")
-        .eq("employee_id", user!.id)
-        .eq("attendance_date", yesterday)
-        .eq("status", "checked_in")
-        .maybeSingle();
-      if (error) throw error;
-      return data;
+      return data ?? [];
     },
   });
 }
@@ -78,11 +55,11 @@ interface LocState {
 
 export function AttendanceCard() {
   const qc = useQueryClient();
-  const { data: todayRow, isLoading } = useTodayAttendance();
-  const { data: prevOpen } = useOpenPreviousAttendance();
-  // Today's record when present; otherwise show (and allow closing) an overnight session from yesterday.
-  const overnight = !todayRow && !!prevOpen;
-  const row = todayRow ?? prevOpen ?? null;
+  const { data: sessions, isLoading } = useTodayAttendance();
+  const list = sessions ?? [];
+  const open = list.find((r) => r.status === "checked_in") ?? null;
+  const row = open ?? list[list.length - 1] ?? null;
+  const totalMin = list.reduce((m, r) => m + (r.check_out_time ? Math.max(0, (new Date(r.check_out_time).getTime() - new Date(r.check_in_time!).getTime()) / 60000) : 0), 0);
   const { data: offices } = useMyOffices();
   const [busy, setBusy] = useState<null | "in" | "out">(null);
   const [loc, setLoc] = useState<LocState | null>(null);
@@ -148,7 +125,7 @@ export function AttendanceCard() {
     }
   };
 
-  const status = !row ? "Not checked in" : row.status === "checked_in" ? "Working" : "Checked out";
+  const status = !row ? "Not checked in" : open ? "Working" : "Checked out — you can check in again";
 
   return (
     <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
@@ -168,11 +145,16 @@ export function AttendanceCard() {
             <Info label="Check-out" value={formatTime(row?.check_out_time)} />
             <Info label="Duration" value={duration(row?.check_in_time ?? null, row?.check_out_time ?? null)} />
           </div>
-          {overnight && (
-            <p className="mt-3 flex items-start gap-2 rounded-md bg-warning/15 p-3 text-sm">
-              <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-              You are still checked in from yesterday. Check out to close that session, then you can check in for today.
-            </p>
+          {list.length > 1 && (
+            <div className="mt-3 rounded-md border border-border p-3 text-sm">
+              <p className="mb-1 font-medium">Today's sessions ({list.length})</p>
+              <ul className="space-y-0.5 text-muted-foreground">
+                {list.map((r, i) => (
+                  <li key={r.id}>{i + 1}. {formatTime(r.check_in_time)} – {r.check_out_time ? formatTime(r.check_out_time) : "open"}{r.check_out_time && ` · ${duration(r.check_in_time, r.check_out_time)}`}</li>
+                ))}
+              </ul>
+              <p className="mt-1">Completed total: <span className="font-medium text-foreground">{Math.floor(totalMin / 60)}h {Math.round(totalMin % 60)}m</span></p>
+            </div>
           )}
           <p className="mt-3 text-sm text-muted-foreground">Status: <span className="font-medium text-foreground">{status}</span></p>
 
@@ -180,7 +162,7 @@ export function AttendanceCard() {
             <Button
               size="lg"
               className="h-14 text-base"
-              disabled={!!busy || !!row || !configured}
+              disabled={!!busy || !!open || !configured}
               onClick={() => act("in")}
             >
               {busy === "in" ? <Loader2 className="size-5 animate-spin" /> : <LogIn className="size-5" />}
@@ -190,7 +172,7 @@ export function AttendanceCard() {
               size="lg"
               variant="secondary"
               className="h-14 text-base"
-              disabled={!!busy || !row || row.status === "checked_out" || !configured}
+              disabled={!!busy || !open || !configured}
               onClick={() => act("out")}
             >
               {busy === "out" ? <Loader2 className="size-5 animate-spin" /> : <LogOut className="size-5" />}
