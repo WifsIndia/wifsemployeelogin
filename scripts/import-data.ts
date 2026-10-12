@@ -6,7 +6,7 @@
  * Prerequisite: run scripts/migration/pre-import.sql on the NEW project first.
  */
 import { createClient } from "@supabase/supabase-js";
-import { readFile, writeFile, readdir, chmod } from "node:fs/promises";
+import { readFile, writeFile, chmod } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
@@ -89,10 +89,14 @@ async function main() {
   console.log(`✔ auth users: ${creds.length} (temporary passwords saved to ${credFile}, not printed)`);
 
   // Remove rows auto-created by on_auth_user_created (if it was left enabled).
-  const ids = [...createdIds];
-  for (const part of chunk(ids, 200)) {
-    await db.from("user_roles").delete().in("user_id", part);
-    await db.from("profiles").delete().in("id", part).not("id", "in", `(${[...profileIds].join(",") || "00000000-0000-0000-0000-000000000000"})`);
+  for (const part of chunk([...createdIds], 200)) {
+    const r = await db.from("user_roles").delete().in("user_id", part);
+    if (r.error) fail(`cleanup user_roles: ${r.error.message}`);
+  }
+  const orphanIds = [...createdIds].filter((id) => !profileIds.has(id));
+  for (const part of chunk(orphanIds, 200)) {
+    const r = await db.from("profiles").delete().in("id", part);
+    if (r.error) fail(`cleanup profiles: ${r.error.message}`);
   }
 
   // 3. Identity + remaining tables; self-references in a second pass.
@@ -143,4 +147,3 @@ async function uploadFiles(docs: any[]) {
 }
 
 main().catch((e) => fail(e.message));
-void readdir;
