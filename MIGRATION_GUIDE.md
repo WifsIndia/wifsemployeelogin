@@ -36,25 +36,31 @@ DATABASE_URL="<new project direct connection string>" bunx drizzle-kit migrate
 (`drizzle.config.ts` reads `LOVABLE_DB_MIGRATION_URL`. Set that to the new connection string, or adjust the config locally.)
 
 ## 4. Import
-1. SQL Editor (NEW project): run `scripts/migration/pre-import.sql`. If the `auth.users` line is refused for permission reasons, skip it. The import cleans up rows that trigger creates.
-2. Run on a secure machine that has the export folder and the project code (`bun install` first):
+1. SQL Editor (NEW): run `scripts/migration/pre-import.sql` (pauses app triggers, creates the import marker; no auth statements).
+2. SQL Editor (NEW), separately: run `scripts/migration/pre-import-auth-trigger.sql`. If it is refused for permissions, ignore it — the import reconciles rows that trigger creates.
+3. On a secure machine with the export folder (`bun install` first):
+
+POSIX (macOS/Linux):
 ```bash
 TARGET_SUPABASE_URL="https://<new-ref>.supabase.co" \
 TARGET_SUPABASE_SERVICE_ROLE_KEY="<new service role key>" \
 bun scripts/import-data.ts --confirm-target=<new-ref>
 ```
-Optional: `INCLUDE_ORPHAN_AUTH_USERS=true` also recreates the 8 old login accounts that have no profile (removed employees). By default they are skipped, along with their role rows.
+Windows PowerShell:
+```powershell
+$env:TARGET_SUPABASE_URL="https://<new-ref>.supabase.co"; $env:TARGET_SUPABASE_SERVICE_ROLE_KEY="<new service role key>"
+bun scripts/import-data.ts --confirm-target=<new-ref>
+```
+By default all 16 auth accounts are recreated, including the 8 without a profile. To skip those only: add `EXCLUDE_ORPHAN_AUTH_USERS=true`.
 
-What the import does, in order:
-- Checks that the target is empty and not the current database.
-- Replaces migration-seeded rows (roles, permissions, departments, locations, leave policies/types, holidays). This keeps the original IDs, so there are no duplicates and no broken links.
-- Recreates auth users with **their original UUIDs**, confirmed emails and random temporary passwords. The passwords go to `migration-export/temp-credentials.json` (file mode 600) and are never printed.
-- Imports profiles in two passes (`manager_id` goes in after every profile exists), then roles, companies, locations, compensation, projects, attendance, leave, payroll, tasks, history, comments and work logs. Next it uploads document files to the same paths, then imports folders (two passes for `parent_id`), documents, announcements, notifications, links and audit logs.
-- Checks every table's row count against the export.
+Before writing, the import checks: target is not the current backend, `--confirm-target` matches the URL, all tables/latest columns exist, `pre-import.sql` ran, the private `documents` bucket exists, and the target holds no rows or accounts that are not in the export.
 
-No sequences are involved. All keys are UUIDs, and database defaults stay unchanged.
+Resume: if it stops, fix the cause and re-run the same command. Rows are upserted by original ID, existing accounts are reused (passwords not regenerated), `temp-credentials.json` is saved after every account, and only trigger-created profile/role rows for imported accounts are removed. It exits non-zero on any error or count mismatch and never reports success after a partial run.
 
-3. SQL Editor (NEW project): run `scripts/migration/post-import.sql`. It turns the triggers back on, schedules the two cron jobs (`attendance_auto_close` 18:01 UTC, `overdue_task_reminders` 04:30 UTC = 10:00 IST) and runs sanity checks.
+Temporary passwords are never printed. On POSIX the file is mode 600; on Windows it inherits folder permissions, so keep the folder in your private user directory.
+
+4. SQL Editor (NEW): run `scripts/migration/post-import.sql` (re-enables app triggers, drops the marker, schedules cron jobs, sanity checks).
+5. SQL Editor (NEW), separately, only if step 2 succeeded: run `scripts/migration/post-import-auth-trigger.sql`.
 
 ## 5. Passwords
 - Super Admin (`admin@wifsindia.com`): in the new dashboard go to Authentication → Users → the user → set a new password. Or use their temporary password from the credentials file, then change it.
@@ -70,4 +76,4 @@ Migration/CLI only (not Vercel): `LOVABLE_DB_MIGRATION_URL`/`DATABASE_URL`, `TAR
 - Password hashes cannot be exported, so every user needs a new password.
 - The bucket, pg_cron extension, cron schedules and auth URLs need the manual steps above.
 - The export only runs where the current service key exists, which is the Lovable sandbox.
-- The import must target a fresh project. It refuses to run if operational data or profiles already exist.
+- The import refuses targets holding data not in the export.
