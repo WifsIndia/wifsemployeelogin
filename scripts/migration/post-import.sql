@@ -1,4 +1,5 @@
--- Run in the NEW project's SQL Editor after the import finishes.
+-- STEP C. Run in the NEW project's SQL Editor after the import reports "Import complete". Safe to re-run.
+-- Contains no auth-schema statements; re-enabling the auth trigger is in post-import-auth-trigger.sql.
 do $$
 declare t text;
 begin
@@ -13,13 +14,14 @@ begin
   end loop;
 end $$;
 
-alter table auth.users enable trigger on_auth_user_created;
+drop table if exists public.migration_import_state;
 
--- Scheduled jobs (requires pg_cron extension enabled)
+-- Scheduled jobs (pg_cron must be enabled). Re-running replaces jobs with the same name.
 select cron.schedule('attendance_auto_close', '1 18 * * *', $$select public.auto_close_open_attendance()$$);
 select cron.schedule('overdue_task_reminders', '30 4 * * *', $$select public.send_overdue_task_reminders()$$);
 
 -- Sanity checks
 select (select count(*) from public.profiles) profiles,
        (select count(*) from public.user_roles where role = 'super_admin') super_admins,
-       (select count(*) from cron.job) cron_jobs;
+       (select count(*) from cron.job) cron_jobs,
+       (select tgenabled from pg_trigger where tgname = 'on_auth_user_created') auth_trigger;
