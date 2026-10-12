@@ -30,3 +30,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Data migration artifacts (employee data, documents, temporary passwords) — never commit
+migration-export/
+migration-export-*/
+.env.migration
+.env.migration.*
